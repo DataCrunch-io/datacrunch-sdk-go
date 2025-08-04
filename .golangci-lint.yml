@@ -1,0 +1,53 @@
+run:
+  timeout: 10m
+  issues-exit-code: 1
+  tests: false  # Do not lint test files
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  skip-dirs:
+    - internal/testutil
+  skip-files:
+    - ".*_test\\.go$"
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  govet:
+    check-shadowing: false
+    fieldalignment: false
+  misspell:
+    locale: US
+  goimports:
+    local-prefixes: github.com/datacrunch-io/datacrunch-sdk-go
+
+linters:
+  # Start fresh - disable everything, enable only what we want
+  disable-all: true
+  enable:
+    # Essential formatting
+    - gofmt
+    - goimports
+    
+    # Basic code quality (no unused/staticcheck/errcheck)
+    - govet
+    - typecheck
+    - gosimple
+    - misspell
+    - unconvert
+    - whitespace
+
+issues:
+  exclude-files:
+    - ".*_test\\.go$"
+    - "internal/testutil/"
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
+
+severity:
+  default-severity: error
+  case-sensitive: false

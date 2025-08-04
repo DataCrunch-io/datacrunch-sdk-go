@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Build artifacts
+build/
+bin/
+dist/
+
+# Test coverage
+coverage/
+coverage.txt
+coverage.html
+*.out
+
+# Development files
+.golangci-lint.cache
+.env*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coder
+coder*
+.claude/*
