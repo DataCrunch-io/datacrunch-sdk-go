@@ -85,11 +85,29 @@ func New(cfg interface{}, handlers Handlers, retryer Retryer, operation *Operati
 	httpReq, _ := http.NewRequest(method, "", nil)
 
 	// Extract BaseURL from config
-	baseURL := "https://api.datacrunch.io/v1" // default value
-	if config, ok := cfg.(map[string]interface{}); ok {
+	baseURL := "https://api.datacrunch.io/v1" // default fallback value
+
+	// Try different config types
+	switch config := cfg.(type) {
+	case map[string]interface{}:
 		if url, exists := config["BaseURL"]; exists {
 			if str, ok := url.(string); ok {
 				baseURL = str
+			}
+		}
+	default:
+		// Use reflection to check for BaseURL field in any config struct
+		if cfgValue := reflect.ValueOf(cfg); cfgValue.IsValid() {
+			// Handle both struct and pointer to struct
+			if cfgValue.Kind() == reflect.Ptr && !cfgValue.IsNil() {
+				cfgValue = cfgValue.Elem()
+			}
+			if cfgValue.Kind() == reflect.Struct {
+				if field := cfgValue.FieldByName("BaseURL"); field.IsValid() && field.Kind() == reflect.String {
+					if urlStr := field.String(); urlStr != "" {
+						baseURL = urlStr
+					}
+				}
 			}
 		}
 	}

@@ -34,6 +34,26 @@ help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(BLUE)%-20s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 
+##@ Code Generation
+
+generate-services: ## Generate all service clients from templates
+	@echo "$(BLUE)Generating all DataCrunch SDK services...$(NC)"
+	@go run tools/cmd/generate/main.go
+	@echo "$(GREEN)✅ Service generation complete!$(NC)"
+
+generate-service: ## Generate specific service (usage: make generate-service SERVICE=instance)
+	@echo "$(BLUE)Generating service: $(SERVICE)...$(NC)"
+	@go run tools/cmd/generate/main.go -service $(SERVICE)
+	@echo "$(GREEN)✅ Service $(SERVICE) generated!$(NC)"
+
+generate-services-dry-run: ## Show what services would be generated (dry run)
+	@echo "$(YELLOW)🏃 Dry run - showing what would be generated...$(NC)"
+	@go run tools/cmd/generate/main.go -dry-run
+
+generate: generate-services ## Alias for generate-services
+
+##@ Build & Test
+
 .PHONY: all
 all: clean deps lint test build ## Run all checks and build
 

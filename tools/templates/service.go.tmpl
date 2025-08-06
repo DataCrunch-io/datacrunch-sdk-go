@@ -1,4 +1,4 @@
-package startscripts
+package {{.PackageName}}
 
 import (
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
@@ -8,17 +8,18 @@ import (
 )
 
 const (
-	EndpointsID = "startscripts"
+	EndpointsID = "{{.PackageName}}"
 	APIVersion  = "v1"
 )
 
-// StartScripts provides the API operation methods for making requests to
-type StartScripts struct {
+// {{.ClassName}} provides the API operation methods for making requests to
+// DataCrunch {{.ServiceName}} API
+type {{.ClassName}} struct {
 	*client.Client
 }
 
-// Client is an alias for StartScripts to match the expected interface
-type Client = *StartScripts
+// Client is an alias for {{.ClassName}} to match the expected interface
+type Client = *{{.ClassName}}
 
 // Used for custom client initialization logic
 var initClient func(*client.Client)
@@ -30,7 +31,7 @@ type ConfigProvider interface {
 	ClientConfig(serviceName string, cfgs ...*interface{}) client.Config
 }
 
-// New creates a new instance of the StartScripts client with a config provider.
+// New creates a new instance of the {{.ClassName}} client with a config provider.
 // If additional configuration is needed for the client instance use the optional
 // client.Config parameter to add your extra config.
 //
@@ -38,18 +39,18 @@ type ConfigProvider interface {
 //
 //	mySession := session.Must(session.New())
 //
-//	// Create a StartScripts client from just a session.
-//	svc := startscripts.New(mySession)
+//	// Create a {{.ClassName}} client from just a session.
+//	svc := {{.PackageName}}.New(mySession)
 //
-//	// Create a StartScripts client with additional configuration
-//	svc := startscripts.New(mySession, &client.Config{Timeout: 60 * time.Second})
-func New(p ConfigProvider, cfgs ...*interface{}) *StartScripts {
+//	// Create a {{.ClassName}} client with additional configuration
+//	svc := {{.PackageName}}.New(mySession, &client.Config{Timeout: 60 * time.Second})
+func New(p ConfigProvider, cfgs ...*interface{}) *{{.ClassName}} {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 	return newClient(c)
 }
 
 // newClient creates, initializes and returns a new service client instance.
-func newClient(cfg client.Config) *StartScripts {
+func newClient(cfg client.Config) *{{.ClassName}} {
 	handlers := request.Handlers{}
 
 	// Add protocol handlers for REST JSON
@@ -57,7 +58,7 @@ func newClient(cfg client.Config) *StartScripts {
 	handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
 	handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
 
-	svc := &StartScripts{
+	svc := &{{.ClassName}}{
 		Client: client.New(&cfg, metadata.ClientInfo{
 			ServiceName: EndpointsID,
 			APIVersion:  APIVersion,
@@ -73,7 +74,7 @@ func newClient(cfg client.Config) *StartScripts {
 	return svc
 }
 
-func (c *StartScripts) newRequest(op *request.Operation, params, data interface{}) *request.Request {
+func (c *{{.ClassName}}) newRequest(op *request.Operation, params, data interface{}) *request.Request {
 	req := c.NewRequest(op, params, data)
 
 	// Run custom request initialization if present
