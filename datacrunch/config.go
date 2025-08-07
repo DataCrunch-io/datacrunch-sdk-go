@@ -35,7 +35,7 @@ func WithBaseURL(baseURL string) Option {
 // WithCredentials sets static OAuth2 client credentials
 func WithCredentials(clientID, clientSecret string) Option {
 	return func(c *ClientConfig) {
-		c.Credentials = credentials.NewStaticCredentials(clientID, clientSecret, "https://api.datacrunch.io")
+		c.Credentials = credentials.NewStaticCredentials(clientID, clientSecret, *c.BaseURL)
 	}
 }
 
