@@ -8,15 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/session"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/instance"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/instancetypes"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/locations"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/sshkeys"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/startscripts"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/volumes"
-	"github.com/datacrunch-io/datacrunch-sdk-go/service/volumetypes"
 )
 
 // WorkflowConfig holds configuration for our advanced workflow
@@ -34,14 +33,7 @@ type WorkflowConfig struct {
 
 // ResourceManager handles creation and cleanup of DataCrunch resources
 type ResourceManager struct {
-	sess                *session.Session
-	instanceClient      *instance.Instance
-	instanceTypesClient *instancetypes.InstanceTypes
-	locationsClient     *locations.Locations
-	sshKeysClient       *sshkeys.SSHKey
-	startScriptsClient  *startscripts.StartScripts
-	volumesClient       *volumes.Volumes
-	volumeTypesClient   *volumetypes.VolumeTypes
+	client *datacrunch.Client
 
 	// Track created resources for cleanup
 	createdResources *CreatedResources
@@ -63,7 +55,8 @@ func main() {
 	fmt.Println("• Advanced error handling and retries")
 	fmt.Println("• Resource lifecycle management")
 	fmt.Println("• Cost optimization strategies")
-	fmt.Println("• Production-ready patterns\n")
+	fmt.Println("• Production-ready patterns")
+	fmt.Println()
 
 	// Configuration for different scenarios
 	scenarios := []WorkflowConfig{
@@ -135,34 +128,27 @@ func main() {
 	fmt.Println("• Production-ready configuration patterns")
 }
 
-// NewResourceManager creates a new resource manager with all service clients
+// NewResourceManager creates a new resource manager with unified DataCrunch client
 func NewResourceManager() (*ResourceManager, error) {
-	// Create session with advanced configuration
-	sess := session.New(
-		session.WithTimeout(60 * time.Second),
+	// Create client with advanced configuration
+	client := datacrunch.New(
+		datacrunch.WithTimeout(60 * time.Second),
 	)
 
 	// Test credentials
-	creds := sess.GetCredentials()
+	creds := client.Session.GetCredentials()
 	credValue, err := creds.Get()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %v", err)
 	}
 
 	fmt.Printf("🔐 Using credentials from: %s\n", credValue.ProviderName)
-	fmt.Printf("📍 API Base URL: %s\n", sess.Config.BaseURL)
+	fmt.Printf("📍 API Base URL: %s\n", client.Session.Config.BaseURL)
 
-	// Initialize all service clients
+	// Initialize resource manager with unified client
 	rm := &ResourceManager{
-		sess:                sess,
-		instanceClient:      instance.New(sess),
-		instanceTypesClient: instancetypes.New(sess),
-		locationsClient:     locations.New(sess),
-		sshKeysClient:       sshkeys.New(sess),
-		startScriptsClient:  startscripts.New(sess),
-		volumesClient:       volumes.New(sess),
-		volumeTypesClient:   volumetypes.New(sess),
-		createdResources:    &CreatedResources{},
+		client:           client,
+		createdResources: &CreatedResources{},
 	}
 
 	return rm, nil
@@ -240,13 +226,13 @@ func (rm *ResourceManager) OptimizeConfiguration(ctx context.Context, config Wor
 	optimized := config
 
 	// Get all available instance types
-	instanceTypeList, err := rm.instanceTypesClient.ListInstanceTypes(ctx)
+	instanceTypeList, err := rm.client.InstanceTypes.ListInstanceTypes()
 	if err != nil {
 		return optimized, fmt.Errorf("failed to list instance types: %v", err)
 	}
 
 	// Get all locations
-	locationList, err := rm.locationsClient.ListLocations(ctx)
+	locationList, err := rm.client.Locations.ListLocations()
 	if err != nil {
 		return optimized, fmt.Errorf("failed to list locations: %v", err)
 	}
@@ -344,7 +330,7 @@ func (rm *ResourceManager) CreateSSHKeyWithRetry(ctx context.Context, config Wor
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		fmt.Printf("   🔑 Creating SSH key '%s' (attempt %d/%d)...\n", keyName, attempt, maxRetries)
 
-		keyResp, err := rm.sshKeysClient.CreateSSHKey(ctx, &sshkeys.CreateSSHKeyInput{
+		keyResp, err := rm.client.SSHKeys.CreateSSHKey(&sshkeys.CreateSSHKeyInput{
 			Name: keyName,
 			Key:  config.SSHPublicKey,
 		})
@@ -386,7 +372,7 @@ func (rm *ResourceManager) CreateStartupScript(ctx context.Context, config Workf
 
 	fmt.Printf("   📜 Creating startup script '%s'...\n", scriptName)
 
-	scriptID, err := rm.startScriptsClient.CreateStartScript(ctx, &startscripts.CreateStartScriptInput{
+	scriptID, err := rm.client.StartScripts.CreateStartScript(&startscripts.CreateStartScriptInput{
 		Name:   scriptName,
 		Script: config.SetupScript,
 	})
@@ -404,7 +390,7 @@ func (rm *ResourceManager) CreateVolume(ctx context.Context, config WorkflowConf
 	volumeName := fmt.Sprintf("%s-data-%d", config.ProjectName, time.Now().Unix())
 
 	// Get available volume types
-	volumeTypeList, err := rm.volumeTypesClient.ListVolumeTypes(ctx)
+	volumeTypeList, err := rm.client.VolumeTypes.ListVolumeTypes()
 	if err != nil {
 		return "", fmt.Errorf("failed to list volume types: %v", err)
 	}
@@ -424,7 +410,7 @@ func (rm *ResourceManager) CreateVolume(ctx context.Context, config WorkflowConf
 
 	fmt.Printf("   💾 Creating %dGB %s volume '%s'...\n", config.StorageSize, volumeType, volumeName)
 
-	volumeID, err := rm.volumesClient.CreateVolume(ctx, &volumes.CreateVolumeInput{
+	volumeID, err := rm.client.Volumes.CreateVolume(&volumes.CreateVolumeInput{
 		Name:         volumeName,
 		Size:         config.StorageSize,
 		Type:         volumeType,
@@ -465,7 +451,7 @@ func (rm *ResourceManager) CreateInstanceWithRetry(ctx context.Context, config W
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		fmt.Printf("   🖥️ Creating instance '%s' (attempt %d/%d)...\n", instanceName, attempt, maxRetries)
 
-		instanceID, err := rm.instanceClient.CreateInstance(ctx, createInput)
+		instanceID, err := rm.client.Instance.CreateInstance(createInput)
 		if err == nil {
 			fmt.Printf("   ✅ Instance creation initiated: %s\n", instanceID)
 			return instanceID, nil
@@ -512,7 +498,7 @@ func (rm *ResourceManager) WaitForInstanceReady(ctx context.Context, instanceID 
 			return nil, fmt.Errorf("timeout waiting for instance to be ready after %v", maxWaitTime)
 		case <-ticker.C:
 			// Get current instance status
-			instances, err := rm.instanceClient.ListInstances(ctx)
+			instances, err := rm.client.Instance.ListInstances()
 			if err != nil {
 				fmt.Printf("   ⚠️ Error checking instance status: %v\n", err)
 				continue
@@ -585,13 +571,12 @@ func (rm *ResourceManager) ValidateEnvironment(ctx context.Context, inst *instan
 
 // Cleanup removes all created resources
 func (rm *ResourceManager) Cleanup() error {
-	ctx := context.Background()
 	var errors []error
 
 	// Cleanup instances (most important)
 	for _, instanceID := range rm.createdResources.InstanceIDs {
 		fmt.Printf("   🗑️ Deleting instance: %s\n", instanceID)
-		if err := rm.instanceClient.PerformInstanceAction(ctx, &instance.InstanceActionInput{
+		if err := rm.client.Instance.PerformInstanceAction(&instance.InstanceActionInput{
 			Action: instance.InstanceActionDelete,
 			ID:     instanceID,
 		}); err != nil {
@@ -602,7 +587,7 @@ func (rm *ResourceManager) Cleanup() error {
 	// Cleanup volumes
 	for _, volumeID := range rm.createdResources.VolumeIDs {
 		fmt.Printf("   🗑️ Deleting volume: %s\n", volumeID)
-		if err := rm.volumesClient.DeleteVolume(ctx, volumeID, true); err != nil {
+		if err := rm.client.Volumes.DeleteVolume(volumeID, true); err != nil {
 			errors = append(errors, fmt.Errorf("failed to delete volume %s: %v", volumeID, err))
 		}
 	}
@@ -610,7 +595,7 @@ func (rm *ResourceManager) Cleanup() error {
 	// Cleanup SSH keys
 	for _, sshKeyID := range rm.createdResources.SSHKeyIDs {
 		fmt.Printf("   🗑️ Deleting SSH key: %s\n", sshKeyID)
-		if err := rm.sshKeysClient.DeleteSSHKey(ctx, sshKeyID); err != nil {
+		if err := rm.client.SSHKeys.DeleteSSHKey(sshKeyID); err != nil {
 			errors = append(errors, fmt.Errorf("failed to delete SSH key %s: %v", sshKeyID, err))
 		}
 	}
@@ -618,7 +603,7 @@ func (rm *ResourceManager) Cleanup() error {
 	// Cleanup startup scripts
 	for _, scriptID := range rm.createdResources.StartScriptIDs {
 		fmt.Printf("   🗑️ Deleting startup script: %s\n", scriptID)
-		if err := rm.startScriptsClient.DeleteStartScript(ctx, scriptID); err != nil {
+		if err := rm.client.StartScripts.DeleteStartScript(scriptID); err != nil {
 			errors = append(errors, fmt.Errorf("failed to delete startup script %s: %v", scriptID, err))
 		}
 	}

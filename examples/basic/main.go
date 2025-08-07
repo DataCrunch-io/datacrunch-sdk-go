@@ -1,47 +1,40 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
-	"time"
 
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/session"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/instance"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/instancetypes"
 )
 
 func main() {
 	fmt.Println("🚀 DataCrunch SDK - Basic Example")
-	fmt.Println("==================================\n")
+	fmt.Println("==================================")
+	fmt.Println()
 
 	// Step 1: Check credentials setup
 	fmt.Println("📋 Step 1: Checking credential setup...")
 	checkCredentialSetup()
 
-	// Step 2: Create session (credentials loaded automatically!)
-	fmt.Println("🔧 Step 2: Creating DataCrunch session...")
-	sess, err := createSession()
+	// Step 2: Create unified DataCrunch client (credentials loaded automatically!)
+	fmt.Println("🔧 Step 2: Creating DataCrunch client...")
+	client, err := createClient()
 	if err != nil {
-		log.Fatalf("❌ Failed to create session: %v", err)
+		log.Fatalf("❌ Failed to create client: %v", err)
 	}
-	fmt.Println("✅ Session created successfully!")
+	fmt.Println("✅ Client created successfully!")
 
-	// Step 3: Create service clients
-	fmt.Println("\n📡 Step 3: Creating API clients...")
-	instanceClient := instance.New(sess)
-	instanceTypesClient := instancetypes.New(sess)
-	fmt.Println("✅ API clients ready!")
+	// Step 3: List available instance types (helps users choose hardware)
+	fmt.Println("\n💻 Step 3: Discovering available instance types...")
+	listInstanceTypes(client.InstanceTypes)
 
-	// Step 4: List available instance types (helps users choose hardware)
-	fmt.Println("\n💻 Step 4: Discovering available instance types...")
-	listInstanceTypes(instanceTypesClient)
-
-	// Step 5: List your current instances
-	fmt.Println("\n🖥️  Step 5: Listing your current instances...")
-	listInstances(instanceClient)
+	// Step 4: List your current instances
+	fmt.Println("\n🖥️ Step 4: Listing your current instances...")
+	listInstances(client.Instance)
 
 	fmt.Println("\n🎉 Basic example completed successfully!")
 	fmt.Println("\nNext steps:")
@@ -100,14 +93,14 @@ func checkCredentialSetup() {
 	fmt.Println()
 }
 
-// createSession demonstrates different ways to create a session
-func createSession() (*session.Session, error) {
+// createClient demonstrates different ways to create a DataCrunch client
+func createClient() (*datacrunch.Client, error) {
 	// The simplest way - SDK automatically finds credentials!
 	// Also gets 3 retries with exponential backoff by default - no configuration needed!
-	sess := session.New()
+	client := datacrunch.New()
 
 	// Test credentials by trying to get them
-	creds := sess.GetCredentials()
+	creds := client.Session.GetCredentials()
 	credValue, err := creds.Get()
 	if err != nil {
 		// Show user-friendly error message
@@ -124,36 +117,32 @@ func createSession() (*session.Session, error) {
 
 	fmt.Printf("✅ Using credentials from: %s\n", credValue.ProviderName)
 
-	// Alternative ways to create sessions (commented out but educational):
+	// Alternative ways to create clients (commented out but educational):
 
 	// Method 2: Explicitly from environment
-	// sess = session.NewFromEnv()
+	// client = datacrunch.NewFromEnv()
 
 	// Method 3: With specific options
-	// sess = session.New(
-	//     session.WithTimeout(60*time.Second),
-	//     session.WithBaseURL("https://api.datacrunch.io/v1"),
+	// client = datacrunch.New(
+	//     datacrunch.WithTimeout(60*time.Second),
+	//     datacrunch.WithBaseURL("https://api.datacrunch.io/v1"),
 	// )
 
 	// Method 4: With custom retry configuration
-	// sess = session.New(
-	//     session.WithMaxRetries(5),        // More retries for resilience
-	//     // session.WithNoRetries(),       // Or disable retries entirely
+	// client = datacrunch.New(
+	//     datacrunch.WithRetryConfig(5, 0, 0),   // More retries for resilience
+	//     // datacrunch.WithNoRetries(),         // Or disable retries entirely
 	// )
 
-	// Method 5: With custom credential provider
-	// customCreds := credentials.NewSharedCredentials("", "production")
-	// sess = session.New(session.WithCredentialsProvider(customCreds))
+	// Method 5: With static credentials
+	// client = datacrunch.NewWithCredentials("client-id", "client-secret")
 
-	return sess, nil
+	return client, nil
 }
 
 // listInstanceTypes shows available hardware configurations
 func listInstanceTypes(client *instancetypes.InstanceTypes) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	instanceTypeList, err := client.ListInstanceTypes(ctx)
+	instanceTypeList, err := client.ListInstanceTypes()
 	if err != nil {
 		handleAPIError("list instance types", err)
 		return
@@ -198,10 +187,7 @@ func listInstanceTypes(client *instancetypes.InstanceTypes) {
 
 // listInstances shows your current instances
 func listInstances(client *instance.Instance) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	instances, err := client.ListInstances(ctx)
+	instances, err := client.ListInstances()
 	if err != nil {
 		handleAPIError("list instances", err)
 		return
@@ -209,7 +195,7 @@ func listInstances(client *instance.Instance) {
 
 	if len(instances) == 0 {
 		fmt.Println("📝 No instances found. You can create your first instance with:")
-		fmt.Println("   client.Instance.CreateInstance(ctx, &instance.CreateInstanceInput{...})")
+		fmt.Println("   client.Instance.CreateInstance(&instance.CreateInstanceInput{...})")
 		fmt.Println()
 		fmt.Println("💡 Recommended first instance:")
 		fmt.Println("   - Instance Type: Pick one from the list above")
