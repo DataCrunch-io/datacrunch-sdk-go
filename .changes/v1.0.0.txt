@@ -1,0 +1,59 @@
+```release-note:enhancement
+Initial stable release of DataCrunch Go SDK with complete API coverage
+```
+
+```release-note:feature
+Add Instance service for creating, listing, and managing compute instances
+```
+
+```release-note:feature
+Add InstanceTypes service for listing available instance types with pricing
+```
+
+```release-note:feature
+Add InstanceAvailability service for checking instance availability across locations
+```
+
+```release-note:feature
+Add Locations service for listing available datacenter locations
+```
+
+```release-note:feature
+Add SSHKeys service for managing SSH keys for instance access
+```
+
+```release-note:feature
+Add StartScripts service for managing custom startup scripts
+```
+
+```release-note:feature
+Add Volumes service for creating and managing storage volumes
+```
+
+```release-note:feature
+Add VolumeTypes service for listing available volume types and specifications
+```
+
+```release-note:feature
+Add comprehensive authentication system with OAuth2, environment variables, and credentials file support
+```
+
+```release-note:feature
+Add session-based architecture with automatic credential discovery from multiple sources
+```
+
+```release-note:feature
+Add built-in retry mechanism with configurable backoff for API resilience
+```
+
+```release-note:feature
+Add comprehensive error handling with structured error types and detailed error information
+```
+
+```release-note:feature
+Add complete Go interfaces and type definitions for type safety
+```
+
+```release-note:feature
+Add examples demonstrating basic and advanced SDK usage patterns
+```
