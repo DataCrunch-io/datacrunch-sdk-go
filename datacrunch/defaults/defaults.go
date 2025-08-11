@@ -2,7 +2,6 @@ package defaults
 
 import (
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/auth"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 )
@@ -37,43 +36,43 @@ func CredProviders() []credentials.Provider {
 	}
 }
 
-// CredProvidersWithEndpoints returns credential providers including endpoint-based providers
-// This is useful when you want to include endpoint credentials in your chain
-func CredProvidersWithEndpoints(endpointConfigs []EndpointCredentialConfig) []credentials.Provider {
-	providers := []credentials.Provider{
-		&credentials.EnvProvider{},
-		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
-	}
+// // CredProvidersWithEndpoints returns credential providers including endpoint-based providers
+// // This is useful when you want to include endpoint credentials in your chain
+// func CredProvidersWithEndpoints(endpointConfigs []EndpointCredentialConfig) []credentials.Provider {
+// 	providers := []credentials.Provider{
+// 		&credentials.EnvProvider{},
+// 		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
+// 	}
 
-	// Add endpoint providers as configured
-	for _, config := range endpointConfigs {
-		if config.Endpoint != "" {
-			providers = append(providers, credentials.NewEndpointProvider(
-				config.ClientConfig,
-				config.Endpoint,
-				config.Options...,
-			))
-		}
-	}
+// 	// Add endpoint providers as configured
+// 	for _, config := range endpointConfigs {
+// 		if config.Endpoint != "" {
+// 			providers = append(providers, credentials.NewEndpointProvider(
+// 				config.ClientConfig,
+// 				config.Endpoint,
+// 				config.Options...,
+// 			))
+// 		}
+// 	}
 
-	return providers
-}
+// 	return providers
+// }
 
-// EndpointCredentialConfig holds configuration for endpoint-based credential providers
-type EndpointCredentialConfig struct {
-	ClientConfig client.Config
-	Endpoint     string
-	Options      []credentials.EndpointProviderOptions
-}
+// // EndpointCredentialConfig holds configuration for endpoint-based credential providers
+// type EndpointCredentialConfig struct {
+// 	ClientConfig client.Config
+// 	Endpoint     string
+// 	Options      []credentials.EndpointProviderOptions
+// }
 
-// NewChainWithEndpoints creates a credential chain that includes endpoint providers
-func NewChainWithEndpoints(endpointConfigs []EndpointCredentialConfig, verbose bool) *credentials.Credentials {
-	providers := CredProvidersWithEndpoints(endpointConfigs)
-	if verbose {
-		return credentials.NewChainCredentialsVerbose(providers, true)
-	}
-	return credentials.NewChainCredentials(providers)
-}
+// // NewChainWithEndpoints creates a credential chain that includes endpoint providers
+// func NewChainWithEndpoints(endpointConfigs []EndpointCredentialConfig, verbose bool) *credentials.Credentials {
+// 	providers := CredProvidersWithEndpoints(endpointConfigs)
+// 	if verbose {
+// 		return credentials.NewChainCredentialsVerbose(providers, true)
+// 	}
+// 	return credentials.NewChainCredentials(providers)
+// }
 
 // ValidateCredentialsHandler validates that credentials are available
 func ValidateCredentialsHandler(r *request.Request) {

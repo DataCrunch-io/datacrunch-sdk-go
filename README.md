@@ -15,7 +15,7 @@ go get github.com/datacrunch-io/datacrunch-sdk-go
 
 The SDK uses an **AWS-style credential chain** that automatically finds your credentials from multiple sources. Just set your credentials once and start coding!
 
-### 🚀 Fastest Way - Environment Variables
+### 🚀 Basic Usage - Unified Client
 
 ```bash
 # Set these environment variables
@@ -27,7 +27,6 @@ export DATACRUNCH_CLIENT_SECRET="your-client-secret"
 package main
 
 import (
-    "context"
     "fmt"
     "log"
 
@@ -35,18 +34,56 @@ import (
 )
 
 func main() {
-    // That's it! SDK automatically finds credentials from environment
+    // Basic: Create unified client - SDK automatically finds credentials!
     client := datacrunch.New()
     
-    ctx := context.Background()
-    
-    // List your instances
-    instances, err := client.Instance.ListInstances(ctx, &instance.ListInstancesInput{})
+    // List instance types
+    instanceTypes, err := client.InstanceTypes.ListInstanceTypes()
     if err != nil {
         log.Fatalf("Error: %v", err)
     }
     
-    fmt.Printf("Found %d instances\n", len(instances.Instances))
+    fmt.Printf("Found %d instance types\n", len(instanceTypes))
+    
+    // List your instances
+    instances, err := client.Instance.ListInstances()
+    if err != nil {
+        log.Fatalf("Error: %v", err)
+    }
+    
+    fmt.Printf("Found %d instances\n", len(instances))
+}
+```
+
+### ⚡ Advanced Usage - Direct Service Creation
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
+    "github.com/datacrunch-io/datacrunch-sdk-go/service/instance"
+    "github.com/datacrunch-io/datacrunch-sdk-go/service/instancetypes"
+)
+
+func main() {
+    // Advanced: Create session first, then individual services
+    session := datacrunch.NewSession()
+    
+    // Create only the services you need
+    instanceTypesService := instancetypes.New(session)
+    instanceService := instance.New(session)
+    
+    // Use the services
+    instanceTypes, err := instanceTypesService.ListInstanceTypes()
+    if err != nil {
+        log.Fatalf("Error: %v", err)
+    }
+    
+    fmt.Printf("Found %d instance types\n", len(instanceTypes))
 }
 ```
 
@@ -299,9 +336,8 @@ if err != nil {
 
 Check out practical examples in the [`examples/`](examples/) directory:
 
-- **[`basic/`](examples/basic/)** - Simple instance creation
-- **[`credential-chain/`](examples/credential-chain/)** - Multiple credential sources
-- **[`list-instance-types/`](examples/list-instance-types/)** - Find available hardware
+- **[`basic/`](examples/basic/)** - Simple unified client usage with `datacrunch.New()`
+- **[`advanced/`](examples/advanced/)** - Direct service creation from session
 
 ### Run Examples
 
@@ -310,35 +346,84 @@ Check out practical examples in the [`examples/`](examples/) directory:
 export DATACRUNCH_CLIENT_ID="your-client-id"
 export DATACRUNCH_CLIENT_SECRET="your-client-secret"
 
-# Run basic example
+# Run basic example (unified client)
 cd examples/basic
 go run main.go
 
-# Run credential chain example
-cd examples/credential-chain  
+# Run advanced example (direct service creation)
+cd examples/advanced
 go run main.go
 ```
+
+## Two Approaches to Use the SDK
+
+### 1. **Basic Approach** - Unified Client (`datacrunch.New()`)
+
+Best for: Simple applications, getting started, when you need multiple services
+
+```go
+client := datacrunch.New()
+
+// All services available through client
+instanceTypes := client.InstanceTypes.ListInstanceTypes()
+instances := client.Instance.ListInstances()
+sshKeys := client.SSHKeys.ListSSHKeys()
+```
+
+**Pros:**
+- Simple and straightforward
+- All services available immediately
+- Good for most use cases
+
+### 2. **Advanced Approach** - Direct Service Creation
+
+Best for: Fine-grained control, memory efficiency, service-specific applications
+
+```go
+session := datacrunch.NewSession()
+
+// Create only the services you need
+instanceService := instance.New(session)
+instanceTypesService := instancetypes.New(session)
+
+// Use individual services
+instances := instanceService.ListInstances()
+```
+
+**Pros:**
+- Memory efficient (create only needed services)
+- Fine-grained control over service lifecycle
+- Share session across multiple services
+- Better for microservices architecture
 
 ## Common Use Cases
 
 ### 🤖 Machine Learning Workflows
 
+**Basic Approach:**
 ```go
-// 1. Create GPU instance for training
-instance, err := client.Instance.CreateInstance(ctx, &instance.CreateInstanceInput{
-    Name:         "bert-training",
-    InstanceType: "V100.4x", // 4x V100 GPUs
-    Image:        "tensorflow-2.13",
-    StartScript: `#!/bin/bash
-        git clone https://github.com/your-org/ml-project.git /workspace
-        cd /workspace && pip install -r requirements.txt
-        python train.py --epochs 100
-    `,
-})
+// Create unified client
+client := datacrunch.New()
 
-// 2. Monitor training progress
-// 3. Save results to volume
-// 4. Terminate instance when done
+// Create GPU instance for training
+instanceID, err := client.Instance.CreateInstance(&instance.CreateInstanceInput{
+    Hostname:     "bert-training",
+    InstanceType: "V100.1x",
+    Image:        "pytorch-2.0",
+    SSHKeyIDs:    []string{"your-ssh-key-id"},
+})
+```
+
+**Advanced Approach:**
+```go
+// Create session and specific services
+session := datacrunch.NewSession()
+instanceService := instance.New(session)
+volumeService := volumes.New(session)
+
+// Create resources with fine-grained control
+volumeID := volumeService.CreateVolume(...)
+instanceID := instanceService.CreateInstance(...)
 ```
 
 ### 🚀 CI/CD Environments
@@ -354,21 +439,34 @@ go run deploy.go
 
 ### 🏢 Enterprise Multi-Environment
 
+**Basic Approach:**
 ```go
-// Different clients for different environments
+// Different unified clients for different environments
 envClients := map[string]*datacrunch.Client{
     "dev": datacrunch.New(datacrunch.WithCredentialsProvider(
         credentials.NewSharedCredentials("", "development"))),
-    "staging": datacrunch.New(datacrunch.WithCredentialsProvider(
-        credentials.NewSharedCredentials("", "staging"))),
     "prod": datacrunch.New(datacrunch.WithCredentialsProvider(
         credentials.NewSharedCredentials("", "production"))),
 }
 
-// Deploy to all environments
 for env, client := range envClients {
-    fmt.Printf("Deploying to %s...\n", env)
-    // deployment logic
+    instances, _ := client.Instance.ListInstances()
+    fmt.Printf("%s: %d instances\n", env, len(instances))
+}
+```
+
+**Advanced Approach:**
+```go
+// Share session across environments with different service configurations
+envSessions := map[string]*session.Session{
+    "dev": datacrunch.NewSession(session.WithCredentials(...)),
+    "prod": datacrunch.NewSession(session.WithCredentials(...)),
+}
+
+for env, sess := range envSessions {
+    instanceService := instance.New(sess)
+    instances, _ := instanceService.ListInstances()
+    fmt.Printf("%s: %d instances\n", env, len(instances))
 }
 ```
 
@@ -376,14 +474,14 @@ for env, client := range envClients {
 
 ### From Legacy SDK
 
-**Before:**
+**Before (Legacy):**
 ```go
 client := datacrunch.New(
     datacrunch.WithCredentials("client-id", "client-secret"),
 )
 ```
 
-**After (Recommended):**
+**After - Basic Approach (Recommended):**
 ```bash
 # Set environment variables (more secure)
 export DATACRUNCH_CLIENT_ID="client-id"
@@ -391,6 +489,12 @@ export DATACRUNCH_CLIENT_SECRET="client-secret"
 ```
 ```go
 client := datacrunch.New() // Credentials loaded automatically!
+```
+
+**After - Advanced Approach:**
+```go
+session := datacrunch.NewSession() // Credentials loaded automatically!
+instanceService := instance.New(session)
 ```
 
 ### From Other Cloud SDKs

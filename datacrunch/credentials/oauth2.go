@@ -137,7 +137,7 @@ func (c *OAuth2Credentials) doTokenRequest(ctx context.Context, payload map[stri
 	}
 
 	body, _ := json.Marshal(payload)
-	endpoint := baseURL + "/v1/oauth2/token"
+	endpoint := baseURL + "/oauth2/token"
 	log.Printf("Sending token request to %s", endpoint)
 	log.Printf("Request payload: %s", string(body))
 
@@ -164,7 +164,6 @@ func (c *OAuth2Credentials) doTokenRequest(ctx context.Context, payload map[stri
 		return err
 	}
 	log.Printf("Token response status: %d", resp.StatusCode)
-	log.Printf("Token response body: %s", string(respBody))
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("token endpoint returned %d: %s", resp.StatusCode, string(respBody))
