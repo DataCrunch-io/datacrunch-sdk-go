@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/config"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/defaults"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
@@ -14,7 +14,7 @@ import (
 
 // Session provides a shared configuration and state for service clients
 type Session struct {
-	Config      *config.Config
+	Config      *datacrunch.Config
 	Handlers    request.Handlers
 	Credentials *credentials.Credentials
 }
@@ -40,7 +40,7 @@ type Options struct {
 func DefaultOptions() *Options {
 	defaultMaxRetries := 3 // Provide good defaults for all users
 	return &Options{
-		BaseURL:    defaults.DefaultBaseURL,
+		BaseURL:    "https://api.datacrunch.io/v1",
 		Timeout:    30 * time.Second,
 		MaxRetries: &defaultMaxRetries, // Default to 3 retries for resilience
 	}
@@ -78,7 +78,7 @@ func New(options ...func(*Options)) *Session {
 		}
 	}
 
-	cfg := &config.Config{
+	cfg := &datacrunch.Config{
 		BaseURL:     &finalBaseURL,
 		Timeout:     &opts.Timeout,
 		MaxRetries:  opts.MaxRetries,
@@ -132,7 +132,7 @@ func NewFromEnv(options ...func(*Options)) *Session {
 	}
 
 	// Create session using the env-only credentials
-	cfg := &config.Config{
+	cfg := &datacrunch.Config{
 		BaseURL:     &opts.BaseURL,
 		Timeout:     &opts.Timeout,
 		MaxRetries:  opts.MaxRetries,
@@ -203,7 +203,7 @@ func WithCredentialChainVerboseErrors(verbose bool) func(*Options) {
 }
 
 // ClientConfig implements the client.ConfigProvider interface
-func (s *Session) ClientConfig(serviceName string, cfgs ...*config.Config) client.Config {
+func (s *Session) ClientConfig(serviceName string, cfgs ...*datacrunch.Config) client.Config {
 	s = s.Copy(cfgs...)
 	return client.Config{
 		Config:   *s.Config,
@@ -212,7 +212,7 @@ func (s *Session) ClientConfig(serviceName string, cfgs ...*config.Config) clien
 	}
 }
 
-func (s *Session) Copy(cfgs ...*config.Config) *Session {
+func (s *Session) Copy(cfgs ...*datacrunch.Config) *Session {
 	newSession := &Session{
 		Config:   s.Config.Copy(cfgs...),
 		Handlers: s.Handlers.Copy(),
@@ -227,7 +227,7 @@ func initHandlers(s *Session) {
 }
 
 // ClientConfigNoResolveEndpoint implements the client.ConfigNoResolveEndpointProvider interface
-func (s *Session) ClientConfigNoResolveEndpoint(cfgs ...*interface{}) config.Config {
+func (s *Session) ClientConfigNoResolveEndpoint(cfgs ...*interface{}) datacrunch.Config {
 	return *s.Config
 }
 

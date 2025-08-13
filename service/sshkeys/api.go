@@ -87,15 +87,23 @@ func (c *SSHKey) DeleteSSHKeys(input *DeleteSSHKeysInput) error {
 	return req.Send()
 }
 
+type DeleteSSHKeyInput struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
 // DeleteSSHKey deletes a single SSH key by ID
 func (c *SSHKey) DeleteSSHKey(id string) error {
 	op := &request.Operation{
 		Name:       "DeleteSSHKey",
 		HTTPMethod: "DELETE",
-		HTTPPath:   fmt.Sprintf("/sshkeys/%s", id),
+		HTTPPath:   "/sshkeys/{id}",
 	}
 
-	req := c.newRequest(op, nil, nil)
+	input := &DeleteSSHKeyInput{
+		ID: id,
+	}
+
+	req := c.newRequest(op, input, nil)
 
 	return req.Send()
 }

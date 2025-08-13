@@ -665,6 +665,79 @@ func TestUnmarshalJSON_ErrorScenarios(t *testing.T) {
 	}
 }
 
+// Test for empty string vs omitted field handling with omitempty
+func TestUnmarshalJSON_EmptyStringVsOmittedField(t *testing.T) {
+	type User struct {
+		Name  string  `json:"name,omitempty"`
+		Email string  `json:"email,omitempty"`  
+		Age   int     `json:"age,omitempty"`
+		Active *bool  `json:"active,omitempty"`
+	}
+
+	tests := []struct {
+		name        string
+		jsonData    string
+		description string
+	}{
+		{
+			name:        "empty string present",
+			jsonData:    `{"name": "", "email": "test@example.com"}`,
+			description: "JSON contains empty string for name field",
+		},
+		{
+			name:        "field completely omitted",
+			jsonData:    `{"email": "test@example.com"}`,
+			description: "JSON omits name field entirely",
+		},
+		{
+			name:        "null value for pointer field",
+			jsonData:    `{"name": "John", "active": null}`,
+			description: "JSON contains explicit null for pointer field",
+		},
+		{
+			name:        "pointer field omitted",
+			jsonData:    `{"name": "John"}`,
+			description: "JSON omits pointer field entirely",
+		},
+		{
+			name:        "zero values present",
+			jsonData:    `{"name": "", "age": 0, "active": false}`,
+			description: "JSON contains explicit zero values",
+		},
+		{
+			name:        "all fields omitted",
+			jsonData:    `{}`,
+			description: "JSON omits all fields",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Logf("Testing: %s", tt.description)
+
+			var result User
+			err := UnmarshalJSON(&result, strings.NewReader(tt.jsonData))
+			
+			if err != nil {
+				t.Errorf("UnmarshalJSON() error = %v", err)
+				return
+			}
+
+			t.Logf("Result: %+v", result)
+			
+			// Additional logging to show field states
+			if result.Name == "" {
+				t.Logf("Name is empty string (could be explicit '' or omitted)")
+			}
+			if result.Active == nil {
+				t.Logf("Active pointer is nil")
+			} else {
+				t.Logf("Active pointer value: %v", *result.Active)
+			}
+		})
+	}
+}
+
 // Test for debugging response mismatches - shows actual vs expected
 func TestUnmarshalJSON_DebuggingHelper(t *testing.T) {
 	// This test helps debug real-world response/struct mismatches

@@ -1,8 +1,6 @@
 package startscripts
 
 import (
-	"fmt"
-
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
@@ -26,6 +24,10 @@ type DeleteStartScriptsInput struct {
 }
 
 type GetStartScriptInput struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
+type DeleteStartScriptInput struct {
 	ID string `location:"uri" locationName:"id"`
 }
 
@@ -103,10 +105,14 @@ func (c *StartScripts) DeleteStartScript(id string) error {
 	op := &request.Operation{
 		Name:       "DeleteStartScript",
 		HTTPMethod: "DELETE",
-		HTTPPath:   fmt.Sprintf("/scripts/%s", id),
+		HTTPPath:   "/scripts/{id}",
 	}
 
-	req := c.newRequest(op, nil, nil)
+	input := &DeleteStartScriptInput{
+		ID: id,
+	}
+
+	req := c.newRequest(op, input, nil)
 
 	return req.Send()
 }

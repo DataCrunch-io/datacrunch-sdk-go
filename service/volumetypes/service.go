@@ -1,9 +1,9 @@
 package volumetypes
 
 import (
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/config"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
@@ -40,13 +40,13 @@ var initRequest func(*request.Request)
 //
 //	// Create a VolumeTypes client with additional configuration
 //	svc := volumetypes.New(mySession, &client.Config{Timeout: 60 * time.Second})
-func New(p client.ConfigProvider, cfgs ...*config.Config) *VolumeTypes {
+func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *VolumeTypes {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 	return newClient(c.Config, c.Handlers)
 }
 
 // newClient creates, initializes and returns a new service client instance.
-func newClient(cfg config.Config, handlers request.Handlers) *VolumeTypes {
+func newClient(cfg datacrunch.Config, handlers request.Handlers) *VolumeTypes {
 
 	svc := &VolumeTypes{
 		Client: client.New(cfg, metadata.ClientInfo{
