@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
 // SSHKeyResponse represents an SSH key
@@ -62,6 +63,9 @@ func (c *SSHKey) CreateSSHKey(input *CreateSSHKeyInput) (*SSHKeyResponse, error)
 
 	var sshKey SSHKeyResponse
 	req := c.newRequest(op, input, &sshKey)
+
+	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
 	return &sshKey, req.Send()
 }

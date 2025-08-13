@@ -58,7 +58,7 @@ func newClient(cfg config.Config, handlers request.Handlers) *SSHKey {
 
 	// Add protocol handlers for REST JSON
 	svc.Handlers.Build.PushBackNamed(restjson.BuildHandler)
-	svc.Handlers.Unmarshal.PushBackNamed(restjson.StandardUnmarshalHandler)
+	svc.Handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
 	svc.Handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
 
 	// Run custom client initialization if present

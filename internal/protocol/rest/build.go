@@ -3,12 +3,12 @@ package rest
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
 	"net/url"
-	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -101,14 +101,6 @@ func buildLocationElements(r *request.Request, v reflect.Value, buildGETQuery bo
 				continue
 			}
 
-			// Support the ability to customize values to be marshaled as a
-			// blob even though they were modeled as a string. Required for S3
-			// API operations like SSECustomerKey is modeled as string but
-			// required to be base64 encoded in request.
-			if field.Tag.Get("marshal-as") == "blob" {
-				m = m.Convert(byteSliceType)
-			}
-
 			var err error
 			switch field.Tag.Get("location") {
 			case "headers": // header maps
@@ -135,26 +127,26 @@ func buildLocationElements(r *request.Request, v reflect.Value, buildGETQuery bo
 }
 
 func buildBody(r *request.Request, v reflect.Value) {
-	if field, ok := v.Type().FieldByName("_"); ok {
-		if payloadName := field.Tag.Get("payload"); payloadName != "" {
-			pfield, _ := v.Type().FieldByName(payloadName)
-			if ptag := pfield.Tag.Get("type"); ptag != "" && ptag != "structure" {
-				payload := reflect.Indirect(v.FieldByName(payloadName))
-				if payload.IsValid() && payload.Interface() != nil {
-					switch reader := payload.Interface().(type) {
-					case io.ReadSeeker:
-						r.SetReaderBody(reader)
-					case []byte:
-						r.SetBufferBody(reader)
-					case string:
-						r.SetStringBody(reader)
-					default:
-						r.Error = dcerr.New(request.ErrCodeSerialization,
-							"failed to encode REST request",
-							fmt.Errorf("unknown payload type %s", payload.Type()))
-					}
-				}
-			}
+	params := v.Interface()
+	if params == nil {
+		return
+	}
+
+	switch body := params.(type) {
+	case io.ReadSeeker:
+		r.SetReaderBody(body)
+	case []byte:
+		r.SetBufferBody(body)
+	case string:
+		r.SetStringBody(body)
+	default:
+		// JSON marshal everything else
+		if data, err := json.Marshal(params); err == nil {
+			r.SetBufferBody(data)
+			r.HTTPRequest.Header.Set("Content-Type", "application/json")
+		} else {
+			r.Error = dcerr.New(request.ErrCodeSerialization,
+				"failed to encode REST request", err)
 		}
 	}
 }
@@ -201,11 +193,9 @@ func buildURI(u *url.URL, v reflect.Value, name string, tag reflect.StructTag) e
 		return dcerr.New(request.ErrCodeSerialization, "failed to encode REST request", err)
 	}
 
-	u.Path = strings.ReplaceAll(u.Path, "{"+name+"}", EscapePath(value, true))
-	u.Path = strings.ReplaceAll(u.Path, "{"+name+"+}", EscapePath(value, false))
+	u.Path = strings.ReplaceAll(u.Path, "{"+name+"}", EscapePath(value))
 
-	u.RawPath = strings.ReplaceAll(u.RawPath, "{"+name+"}", EscapePath(value, true))
-	u.RawPath = strings.ReplaceAll(u.RawPath, "{"+name+"+}", EscapePath(value, false))
+	u.RawPath = strings.ReplaceAll(u.RawPath, "{"+name+"}", EscapePath(value))
 
 	return nil
 }
@@ -239,32 +229,8 @@ func buildQueryString(query url.Values, v reflect.Value, name string, tag reflec
 	return nil
 }
 
-// nolint:
-func cleanPath(u *url.URL) {
-	hasSlash := strings.HasSuffix(u.Path, "/")
-
-	// clean up path, removing duplicate `/`
-	u.Path = path.Clean(u.Path)
-	u.RawPath = path.Clean(u.RawPath)
-
-	if hasSlash && !strings.HasSuffix(u.Path, "/") {
-		u.Path += "/"
-		u.RawPath += "/"
-	}
-}
-
-// EscapePath escapes part of a URL path in Amazon style
-func EscapePath(path string, encodeSep bool) string {
-	var buf bytes.Buffer
-	for i := 0; i < len(path); i++ {
-		c := path[i]
-		if noEscape[c] || (c == '/' && !encodeSep) {
-			buf.WriteByte(c)
-		} else {
-			fmt.Fprintf(&buf, "%%%02X", c)
-		}
-	}
-	return buf.String()
+func EscapePath(path string) string {
+	return url.PathEscape(path)
 }
 
 func convertType(v reflect.Value, tag reflect.StructTag) (str string, err error) {
@@ -275,6 +241,7 @@ func convertType(v reflect.Value, tag reflect.StructTag) (str string, err error)
 
 	switch value := v.Interface().(type) {
 	case string:
+		// if the value is a string and the tag has suppressedJSONValue=true and location=header, then encode the value to base64
 		if tag.Get("suppressedJSONValue") == "true" && tag.Get("location") == "header" {
 			value = base64.StdEncoding.EncodeToString([]byte(value))
 		}
@@ -324,12 +291,9 @@ func convertType(v reflect.Value, tag reflect.StructTag) (str string, err error)
 	case time.Time:
 		format := tag.Get("timestampFormat")
 		if len(format) == 0 {
-			format = protocol.RFC822TimeFormatName
-			if tag.Get("location") == "querystring" {
-				format = protocol.ISO8601TimeFormatName
-			}
+			format = "2006-01-02T15:04:05Z" // default to ISO8601
 		}
-		str = protocol.FormatTime(format, value)
+		str = value.Format(format)
 	case map[string]interface{}:
 		if len(value) == 0 {
 			return "", errValueNotSet

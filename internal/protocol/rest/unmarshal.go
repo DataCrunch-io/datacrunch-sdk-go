@@ -262,11 +262,8 @@ func unmarshalHeader(v reflect.Value, header string, tag reflect.StructTag) erro
 		}
 		v.Set(reflect.ValueOf(&f))
 	case *time.Time:
-		format := tag.Get("timestampFormat")
-		if len(format) == 0 {
-			format = protocol.RFC822TimeFormatName
-		}
-		t, err := protocol.ParseTime(format, header)
+		format := "2006-01-02T15:04:05Z" // default to ISO8601
+		t, err := time.Parse(format, header)
 		if err != nil {
 			return err
 		}

@@ -31,13 +31,6 @@ var UnmarshalMetaHandler = request.NamedHandler{
 	Fn:   UnmarshalMeta,
 }
 
-// StandardUnmarshalHandler is a named request handler for standard JSON unmarshaling
-// Uses Go's standard encoding/json instead of custom jsonutil unmarshaler
-var StandardUnmarshalHandler = request.NamedHandler{
-	Name: "datacrunchsdk.restjson.StandardUnmarshal",
-	Fn:   StandardUnmarshal,
-}
-
 // StringUnmarshalHandler is a named request handler for plain string response unmarshaling
 // Used for APIs that return plain text strings instead of JSON
 var StringUnmarshalHandler = request.NamedHandler{
@@ -87,29 +80,6 @@ func Unmarshal(r *request.Request) {
 // UnmarshalMeta unmarshals response headers for the REST JSON protocol.
 func UnmarshalMeta(r *request.Request) {
 	rest.UnmarshalMeta(r)
-}
-
-// StandardUnmarshal unmarshals a response body using Go's standard encoding/json.
-// This is more flexible than the custom jsonutil unmarshaler and handles
-// standard JSON types automatically.
-func StandardUnmarshal(r *request.Request) {
-	if t := rest.PayloadType(r.Data); t == "structure" || t == "" {
-		// Unmarshal JSON using standard encoding/json via jsonutil
-		if r.DataFilled() && r.HTTPResponse.Body != nil {
-			defer func() {
-				if err := r.HTTPResponse.Body.Close(); err != nil {
-					// Log the error but don't fail the function
-					_ = err // Suppress unused variable warning
-				}
-			}()
-			if err := jsonutil.UnmarshalStandardJSON(r.Data, r.HTTPResponse.Body); err != nil {
-				r.Error = dcerr.New(request.ErrCodeSerialization, "failed to decode JSON response", err)
-			}
-		}
-	} else {
-		// For non-JSON payloads, use the default REST unmarshaler
-		rest.Unmarshal(r)
-	}
 }
 
 // StringUnmarshal unmarshals a plain string response body.

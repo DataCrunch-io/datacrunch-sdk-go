@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
 // Instance represents an instance attached to a volume
@@ -114,6 +115,9 @@ func (c *Volumes) CreateVolume(input *CreateVolumeInput) (string, error) {
 
 	var volumeID string
 	req := c.newRequest(op, input, &volumeID)
+
+	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
 	return volumeID, req.Send()
 }
