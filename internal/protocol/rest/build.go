@@ -201,8 +201,8 @@ func buildURI(u *url.URL, v reflect.Value, name string, tag reflect.StructTag) e
 		return dcerr.New(request.ErrCodeSerialization, "failed to encode REST request", err)
 	}
 
-	u.Path = strings.ReplaceAll(u.Path, "{"+name+"}", value)
-	u.Path = strings.ReplaceAll(u.Path, "{"+name+"+}", value)
+	u.Path = strings.ReplaceAll(u.Path, "{"+name+"}", EscapePath(value, true))
+	u.Path = strings.ReplaceAll(u.Path, "{"+name+"+}", EscapePath(value, false))
 
 	u.RawPath = strings.ReplaceAll(u.RawPath, "{"+name+"}", EscapePath(value, true))
 	u.RawPath = strings.ReplaceAll(u.RawPath, "{"+name+"+}", EscapePath(value, false))
@@ -306,6 +306,8 @@ func convertType(v reflect.Value, tag reflect.StructTag) (str string, err error)
 		str = base64.StdEncoding.EncodeToString(value)
 	case bool:
 		str = strconv.FormatBool(value)
+	case int:
+		str = strconv.FormatInt(int64(value), 10)
 	case int64:
 		str = strconv.FormatInt(value, 10)
 	case float64:

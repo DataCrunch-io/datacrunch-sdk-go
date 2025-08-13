@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol"
@@ -139,6 +140,13 @@ func buildStruct(value reflect.Value, buf *bytes.Buffer, tag reflect.StructTag) 
 		name := field.Name
 		if locName := field.Tag.Get("locationName"); locName != "" {
 			name = locName
+		} else if jsonName := field.Tag.Get("json"); jsonName != "" {
+			// Handle json:"name,omitempty" format
+			if commaIdx := strings.Index(jsonName, ","); commaIdx != -1 {
+				name = jsonName[:commaIdx]
+			} else {
+				name = jsonName
+			}
 		}
 
 		writeString(name, buf)

@@ -35,7 +35,7 @@ type VolumeResponse struct {
 	Name                     string     `json:"name"`
 	CreatedAt                string     `json:"created_at"`
 	Status                   string     `json:"status"`
-	Size                     int        `json:"size"`
+	Size                     int64      `json:"size"`
 	IsOSVolume               bool       `json:"is_os_volume"`
 	Target                   string     `json:"target"`
 	Type                     string     `json:"type"`
@@ -57,7 +57,7 @@ type VolumeResponse struct {
 type CreateVolumeInput struct {
 	Type         string   `json:"type"`
 	LocationCode string   `json:"location_code"`
-	Size         int      `json:"size"`
+	Size         int64    `json:"size"`
 	InstanceID   string   `json:"instance_id,omitempty"`
 	InstanceIDs  []string `json:"instance_ids,omitempty"`
 	Name         string   `json:"name"`
@@ -67,7 +67,7 @@ type CreateVolumeInput struct {
 type VolumeActionInput struct {
 	Action       string   `json:"action"`
 	ID           string   `json:"id"`
-	Size         int      `json:"size,omitempty"`
+	Size         int64    `json:"size,omitempty"`
 	InstanceID   string   `json:"instance_id,omitempty"`
 	InstanceIDs  []string `json:"instance_ids,omitempty"`
 	Name         string   `json:"name,omitempty"`

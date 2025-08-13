@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
 // StartScriptResponse represents a startup script
@@ -62,6 +63,10 @@ func (c *StartScripts) CreateStartScript(input *CreateStartScriptInput) (string,
 
 	var scriptID string
 	req := c.newRequest(op, input, &scriptID)
+
+	// This API returns a plain string, not JSON, so use string unmarshaler
+	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
 	return scriptID, req.Send()
 }

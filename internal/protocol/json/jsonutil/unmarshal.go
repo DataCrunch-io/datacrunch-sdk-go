@@ -156,6 +156,13 @@ func (u unmarshaler) unmarshalStruct(value reflect.Value, data interface{}, tag 
 		name := field.Name
 		if locName := field.Tag.Get("locationName"); locName != "" {
 			name = locName
+		} else if jsonName := field.Tag.Get("json"); jsonName != "" {
+			// Handle standard json tags like `json:"field_name"`
+			if commaIndex := strings.Index(jsonName, ","); commaIndex != -1 {
+				name = jsonName[:commaIndex]
+			} else {
+				name = jsonName
+			}
 		}
 		if u.caseInsensitive {
 			if _, ok := mapData[name]; !ok {
@@ -305,12 +312,25 @@ func (u unmarshaler) unmarshalScalar(value reflect.Value, data interface{}, tag 
 			}
 			di := int64(f)
 			value.Set(reflect.ValueOf(&di))
+		case int64:
+			f, err := d.Float64()
+			if err != nil {
+				return err
+			}
+			di := int64(f)
+			value.Set(reflect.ValueOf(di))
 		case *float64:
 			f, err := d.Float64()
 			if err != nil {
 				return err
 			}
 			value.Set(reflect.ValueOf(&f))
+		case float64:
+			f, err := d.Float64()
+			if err != nil {
+				return err
+			}
+			value.Set(reflect.ValueOf(f))
 		case *time.Time:
 			float, ok := new(big.Float).SetString(d.String())
 			if !ok {
@@ -327,6 +347,8 @@ func (u unmarshaler) unmarshalScalar(value reflect.Value, data interface{}, tag 
 		switch value.Interface().(type) {
 		case *bool:
 			value.Set(reflect.ValueOf(&d))
+		case bool:
+			value.Set(reflect.ValueOf(d))
 		default:
 			return fmt.Errorf("unsupported value: %v (%s)", value.Interface(), value.Type())
 		}
@@ -334,4 +356,14 @@ func (u unmarshaler) unmarshalScalar(value reflect.Value, data interface{}, tag 
 		return fmt.Errorf("unsupported JSON value (%v)", data)
 	}
 	return nil
+}
+
+// UnmarshalStandardJSON reads a stream and unmarshals the results using Go's standard encoding/json.
+// This provides more flexibility than the custom unmarshaler for handling standard JSON types.
+func UnmarshalStandardJSON(v interface{}, stream io.Reader) error {
+	err := json.NewDecoder(stream).Decode(v)
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }

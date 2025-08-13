@@ -211,7 +211,7 @@ func unmarshalHeader(v reflect.Value, header string, tag reflect.StructTag) erro
 			return nil
 		}
 	default:
-		if !v.IsValid() || (header == "" && v.Elem().Kind() != reflect.String) {
+		if !v.IsValid() || (header == "" && (!v.IsNil() && v.Elem().Kind() != reflect.String)) {
 			return nil
 		}
 	}

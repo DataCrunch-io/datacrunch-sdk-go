@@ -33,7 +33,11 @@ const nopayloadPayloadType = "nopayload"
 // PayloadType returns the type of a payload field member of i if there is one,
 // or "".
 func PayloadType(i interface{}) string {
-	v := reflect.Indirect(reflect.ValueOf(i))
+	v := reflect.ValueOf(i)
+	// Dereference all pointer levels
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
 	if !v.IsValid() {
 		return ""
 	}
