@@ -1,8 +1,6 @@
 package sshkeys
 
 import (
-	"fmt"
-
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
@@ -39,16 +37,20 @@ func (c *SSHKey) ListSSHKeys() ([]*SSHKeyResponse, error) {
 	return sshKeys, req.Send()
 }
 
+type GetSSHKeyInput struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
 // GetSSHKey gets a single SSH key by ID
 func (c *SSHKey) GetSSHKey(id string) (*SSHKeyResponse, error) {
 	op := &request.Operation{
 		Name:       "GetSSHKey",
 		HTTPMethod: "GET",
-		HTTPPath:   fmt.Sprintf("/sshkeys/%s", id),
+		HTTPPath:   "/sshkeys/{id}",
 	}
 
 	var sshKey SSHKeyResponse
-	req := c.newRequest(op, nil, &sshKey)
+	req := c.newRequest(op, &GetSSHKeyInput{ID: id}, &sshKey)
 
 	return &sshKey, req.Send()
 }

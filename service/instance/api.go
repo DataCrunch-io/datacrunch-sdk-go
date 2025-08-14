@@ -142,7 +142,7 @@ const (
 
 // ListInstancesInput represents the input for listing instances
 type ListInstancesInput struct {
-	Status *string `location:"querystring" locationName:"status"`
+	Status string `location:"querystring" locationName:"status"`
 }
 
 // ListInstances lists all instances

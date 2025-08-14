@@ -28,18 +28,6 @@ var initClient func(*client.Client)
 var initRequest func(*request.Request)
 
 // New creates a new instance of the SSHKey client with a config provider.
-// If additional configuration is needed for the client instance use the optional
-// client.Config parameter to add your extra config.
-//
-// Example:
-//
-//	mySession := session.Must(session.New())
-//
-//	// Create a SSHKey client from just a session.
-//	svc := sshkeys.New(mySession)
-//
-//	// Create a SSHKey client with additional configuration
-//	svc := sshkeys.New(mySession, &client.Config{Timeout: 60 * time.Second})
 func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *SSHKey {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 	return newClient(c.Config, c.Handlers)

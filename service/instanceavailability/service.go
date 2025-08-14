@@ -28,18 +28,6 @@ var initClient func(*client.Client)
 var initRequest func(*request.Request)
 
 // New creates a new instance of the InstanceAvailability client with a config provider.
-// If additional configuration is needed for the client instance use the optional
-// client.Config parameter to add your extra config.
-//
-// Example:
-//
-//	mySession := session.Must(session.New())
-//
-//	// Create a InstanceAvailability client from just a session.
-//	svc := instanceavailability.New(mySession)
-//
-//	// Create a InstanceAvailability client with additional configuration
-//	svc := instanceavailability.New(mySession, &client.Config{Timeout: 60 * time.Second})
 func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *InstanceAvailability {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 

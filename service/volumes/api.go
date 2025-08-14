@@ -1,8 +1,6 @@
 package volumes
 
 import (
-	"fmt"
-
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
@@ -91,16 +89,20 @@ func (c *Volumes) ListVolumes() ([]*VolumeResponse, error) {
 	return volumes, req.Send()
 }
 
+type GetVolumeInput struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
 // GetVolume gets a volume by ID
 func (c *Volumes) GetVolume(id string) (*VolumeResponse, error) {
 	op := &request.Operation{
 		Name:       "GetVolume",
 		HTTPMethod: "GET",
-		HTTPPath:   fmt.Sprintf("/volumes/%s", id),
+		HTTPPath:   "/volumes/{id}",
 	}
 
 	var volume VolumeResponse
-	req := c.newRequest(op, nil, &volume)
+	req := c.newRequest(op, &GetVolumeInput{ID: id}, &volume)
 
 	return &volume, req.Send()
 }
@@ -149,21 +151,19 @@ func (c *Volumes) ListTrashVolumes() ([]*VolumeResponse, error) {
 	return volumes, req.Send()
 }
 
+type DeleteVolumeInput struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
 // DeleteVolume deletes a volume by ID
 func (c *Volumes) DeleteVolume(id string, isPermanent bool) error {
 	op := &request.Operation{
 		Name:       "DeleteVolume",
 		HTTPMethod: "DELETE",
-		HTTPPath:   fmt.Sprintf("/volumes/%s", id),
+		HTTPPath:   "/volumes/{id}",
 	}
 
-	input := struct {
-		IsPermanent bool `json:"is_permanent"`
-	}{
-		IsPermanent: isPermanent,
-	}
-
-	req := c.newRequest(op, input, nil)
+	req := c.newRequest(op, &DeleteVolumeInput{ID: id}, nil)
 
 	return req.Send()
 }

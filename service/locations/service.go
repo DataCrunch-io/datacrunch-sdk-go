@@ -27,19 +27,7 @@ var initClient func(*client.Client)
 // Used for custom request initialization logic
 var initRequest func(*request.Request)
 
-// New creates a new instance of the Locations client with a config provider.
-// If additional configuration is needed for the client instance use the optional
-// client.Config parameter to add your extra config.
-//
-// Example:
-//
-//	mySession := session.Must(session.New())
-//
-//	// Create a Locations client from just a session.
-//	svc := locations.New(mySession)
-//
-//	// Create a Locations client with additional configuration
-//	svc := locations.New(mySession, &client.Config{Timeout: 60 * time.Second})
+// New creates a new Locations client with a config provider.
 func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *Locations {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 	return newClient(c.Config, c.Handlers)

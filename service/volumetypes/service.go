@@ -28,18 +28,6 @@ var initClient func(*client.Client)
 var initRequest func(*request.Request)
 
 // New creates a new instance of the VolumeTypes client with a config provider.
-// If additional configuration is needed for the client instance use the optional
-// client.Config parameter to add your extra config.
-//
-// Example:
-//
-//	mySession := session.Must(session.New())
-//
-//	// Create a VolumeTypes client from just a session.
-//	svc := volumetypes.New(mySession)
-//
-//	// Create a VolumeTypes client with additional configuration
-//	svc := volumetypes.New(mySession, &client.Config{Timeout: 60 * time.Second})
 func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *VolumeTypes {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 	return newClient(c.Config, c.Handlers)
