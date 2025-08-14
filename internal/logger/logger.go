@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	globalLogger *slog.Logger
-	once         sync.Once
+	dcLogger *slog.Logger
+	once     sync.Once
 )
 
 // SetupFromConfig configures the global logger from config (call this once in your main client)
-func SetupFromConfig(debug *bool, customLogger *slog.Logger) {
+func SetupFromConfig(debug bool, customLogger *slog.Logger) {
 	if customLogger != nil {
 		setGlobalLogger(customLogger)
 		return
@@ -21,7 +21,7 @@ func SetupFromConfig(debug *bool, customLogger *slog.Logger) {
 
 	// Determine log level
 	level := slog.LevelInfo
-	if debug != nil && *debug {
+	if debug {
 		level = slog.LevelDebug
 	} else if envDebug := os.Getenv("DATACRUNCH_DEBUG"); envDebug != "" {
 		if strings.ToLower(envDebug) == "true" || envDebug == "1" {
@@ -50,18 +50,18 @@ func setGlobalLogger(logger *slog.Logger) {
 	if logger == nil {
 		logger = getDefaultLogger()
 	}
-	globalLogger = logger
-	slog.SetDefault(logger) // Also set as Go's default logger
+	dcLogger = logger
+	slog.SetDefault(dcLogger) // Also set as Go's default logger
 }
 
 // getGlobalLogger returns the current global logger
 func getGlobalLogger() *slog.Logger {
-	if globalLogger == nil {
+	if dcLogger == nil {
 		once.Do(func() {
 			setGlobalLogger(getDefaultLogger())
 		})
 	}
-	return globalLogger
+	return dcLogger
 }
 
 // getDefaultLogger creates a basic default logger
@@ -112,14 +112,14 @@ func SanitizeBody(body []byte, maxLen int) string {
 	if len(body) == 0 {
 		return "<empty>"
 	}
-	
+
 	bodyStr := string(body)
-	
+
 	// Truncate if too long
 	if maxLen > 0 && len(bodyStr) > maxLen {
 		bodyStr = bodyStr[:maxLen] + "... (truncated)"
 	}
-	
+
 	return bodyStr
 }
 

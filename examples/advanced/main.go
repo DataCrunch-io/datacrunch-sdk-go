@@ -1,213 +1,147 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
+	"io"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
-	"github.com/datacrunch-io/datacrunch-sdk-go/service/instance"
-	"github.com/datacrunch-io/datacrunch-sdk-go/service/instancetypes"
-	"github.com/datacrunch-io/datacrunch-sdk-go/service/locations"
-	"github.com/datacrunch-io/datacrunch-sdk-go/service/sshkeys"
-	"github.com/datacrunch-io/datacrunch-sdk-go/service/volumes"
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/defaults"
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 )
 
 func main() {
 	fmt.Println("🚀 DataCrunch SDK - Advanced Example")
 	fmt.Println("=====================================")
-	fmt.Println("This example shows advanced SDK usage patterns:")
-	fmt.Println("• Direct service creation from session")
-	fmt.Println("• Shared credentials with different profiles")
-	fmt.Println("• Fine-grained control over SDK components")
-	fmt.Println()
 
-	// Test 1: Shared credentials with profiles
-	if shouldTestSharedCredentials() {
-		testSharedCredentials()
-		fmt.Println()
+	// Create a new session with debug mode enabled
+
+	/**
+		  1. Only Environment Variables (Skip Chain)
+
+	  cfg := datacrunch.NewConfig(
+	      datacrunch.WithBaseURL(baseURL),
+	      datacrunch.WithCredentialsProvider(credentials.NewEnvCredentials()),
+	  )
+
+	  2. Only Shared Credentials File (Skip Chain)
+
+	  cfg := datacrunch.NewConfig(
+	      datacrunch.WithBaseURL(baseURL),
+	      datacrunch.WithCredentialsProvider(credentials.NewSharedCredentials("", "default")),
+	  )
+
+	  3. Static Credentials (Hardcoded)
+
+	  cfg := datacrunch.NewConfig(
+	      datacrunch.WithBaseURL(baseURL),
+	      datacrunch.WithCredentials("your-client-id", "your-client-secret"),
+	  )
+
+	  4. Chain of Providers (Order Matters)
+
+		// default chains:
+		cfg := datacrunch.NewConfig(
+			datacrunch.WithBaseURL(baseURL),
+			datacrunch.WithCredentialsProvider(defaults.CredChain()),
+		)
+
+		// or custom chain
+	  cfg := datacrunch.NewConfig(
+	      datacrunch.WithBaseURL(baseURL),
+	      datacrunch.WithCredentialsProvider(credentials.NewChainCredentials([]credentials.Provider{
+	          credentials.NewEnvCredentials(),
+	          credentials.NewSharedCredentials("", "default"),
+	      })),
+	  )
+	*/
+
+	baseURL := "https://api-staging.datacrunch.io/v1"
+	cfg := datacrunch.NewConfig(
+		datacrunch.WithBaseURL(baseURL),
+		datacrunch.WithDebug(true),
+		datacrunch.WithCredentialsProvider(credentials.NewSharedCredentials("", "staging")), // use default credentials file location
+	)
+
+	clientInfo := metadata.ClientInfo{
+		ServiceName: "instancetypes",
+		APIVersion:  "v1",
+		Endpoint:    *cfg.BaseURL,
 	}
 
-	// Test 2: Direct service creation
-	fmt.Println("🚀 Advanced Pattern: Direct Service Creation")
-	fmt.Println("============================================")
-	fmt.Println("🔧 Creating session...")
-	session := datacrunch.NewSession()
+	// authentication handlers included in the default handlers
+	handlers := defaults.Handlers()
 
-	// Verify credentials work
-	creds := session.GetCredentials()
-	_, err := creds.Get()
+	client := client.New(*cfg, clientInfo, handlers)
+
+	// create request for actual API call
+	op := &request.Operation{
+		Name:       "ListInstanceTypes",
+		HTTPMethod: "GET",
+		HTTPPath:   "/instance-types",
+	}
+
+	req := client.NewRequest(op, nil, []interface{}{})
+
+	req.Handlers.Unmarshal.PushBackNamed(request.NamedHandler{
+		Name: "instance.ListInstanceTypesUnmarshal",
+		Fn: func(r *request.Request) {
+			fmt.Println("🚀 Advanced Pattern: Direct Service Creation")
+			fmt.Println("============================================")
+
+			// print request headers
+			fmt.Println(r.HTTPRequest.Header)
+
+			// print response headers
+			fmt.Println(r.HTTPResponse.Header)
+
+			// print response status code
+			fmt.Println(r.HTTPResponse.StatusCode)
+
+			// print reponse body
+			// Read the response body
+			if r.HTTPResponse.Body != nil {
+				bodyBytes, err := io.ReadAll(r.HTTPResponse.Body)
+				if err != nil {
+					fmt.Println("Error reading body:", err)
+					return
+				}
+
+				// Print raw body
+				fmt.Println("Response Body:", string(bodyBytes))
+
+				// Reset the body so other handlers can read it
+				r.HTTPResponse.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+			}
+
+		},
+	})
+
+	// send request
+	err := req.Send()
 	if err != nil {
-		log.Fatalf("❌ No credentials found. Please set DATACRUNCH_CLIENT_ID and DATACRUNCH_CLIENT_SECRET environment variables")
-	}
-	fmt.Println("✅ Session created successfully!")
-
-	// Create individual services directly from session
-	fmt.Println("\n📦 Creating individual services...")
-
-	instanceTypesService := instancetypes.New(session)
-	fmt.Println("  ✅ InstanceTypes service created")
-
-	instanceService := instance.New(session)
-	fmt.Println("  ✅ Instance service created")
-
-	locationsService := locations.New(session)
-	fmt.Println("  ✅ Locations service created")
-
-	sshKeysService := sshkeys.New(session)
-	fmt.Println("  ✅ SSHKeys service created")
-
-	volumesService := volumes.New(session)
-	fmt.Println("  ✅ Volumes service created")
-
-	// Use the individual services
-	fmt.Println("\n🌍 Using Locations service...")
-	locationList, err := locationsService.ListLocations()
-	if err != nil {
-		log.Fatalf("❌ Failed to list locations: %v", err)
-	}
-	fmt.Printf("Found %d locations:\n", len(locationList))
-	for _, loc := range locationList {
-		fmt.Printf("  - %s (%s)\n", loc.Name, loc.Code)
+		fmt.Println("Error:", err)
 	}
 
-	fmt.Println("\n💻 Using InstanceTypes service...")
-	instanceTypes, err := instanceTypesService.ListInstanceTypes()
-	if err != nil {
-		log.Fatalf("❌ Failed to list instance types: %v", err)
-	}
-	fmt.Printf("Found %d instance types:\n", len(instanceTypes))
-	for i, it := range instanceTypes {
-		if i >= 3 { // Show first 3 only
-			fmt.Printf("... and %d more\n", len(instanceTypes)-3)
-			break
-		}
-		fmt.Printf("  - %s: %s\n", it.InstanceType, it.Name)
-	}
-
-	fmt.Println("\n🖥️ Using Instance service...")
-	instances, err := instanceService.ListInstances()
-	if err != nil {
-		log.Fatalf("❌ Failed to list instances: %v", err)
-	}
-	fmt.Printf("Found %d instances\n", len(instances))
-
-	fmt.Println("\n🔑 Using SSHKeys service...")
-	sshKeys, err := sshKeysService.ListSSHKeys()
-	if err != nil {
-		log.Fatalf("❌ Failed to list SSH keys: %v", err)
-	}
-	fmt.Printf("Found %d SSH keys\n", len(sshKeys))
-
-	fmt.Println("\n💾 Using Volumes service...")
-	volumes, err := volumesService.ListVolumes()
-	if err != nil {
-		log.Fatalf("❌ Failed to list volumes: %v", err)
-	}
-	fmt.Printf("Found %d volumes\n", len(volumes))
-
-	fmt.Println("\n🎉 Advanced example completed!")
-	fmt.Println("\n💡 Advanced patterns demonstrated:")
-	fmt.Println("  - Fine-grained control over service creation")
-	fmt.Println("  - Ability to share session across services")
-	fmt.Println("  - Memory efficiency (create only services you need)")
-	fmt.Println("  - Profile-based credential management")
-	fmt.Println("  - Environment-specific configurations")
-}
-
-func shouldTestSharedCredentials() bool {
-	// Check if shared credentials file exists
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return false
-	}
-	credFile := filepath.Join(homeDir, ".datacrunch", "credentials")
-	_, err = os.Stat(credFile)
-	return err == nil
-}
-
-func testSharedCredentials() {
-	fmt.Println("🔐 Advanced Pattern: Shared Credentials Testing")
-	fmt.Println("=============================================")
-	fmt.Println("📋 Testing different credential profiles...")
-
-	// Test profiles in order of preference
-	profiles := []struct {
-		name    string
-		profile string
-	}{
-		{"default", ""},
-		{"staging", "staging"},
-		{"production", "production"},
-		{"development", "development"},
-	}
-
-	for _, p := range profiles {
-		testProfile(p.profile, p.name)
-	}
-}
-
-func testProfile(profile, displayName string) {
-	fmt.Printf("\n🔍 Testing %s profile...\n", displayName)
-
-	// Create shared credentials provider
-	var sharedCreds *credentials.Credentials
-	if profile == "" {
-		sharedCreds = credentials.NewSharedCredentials("", "")
-	} else {
-		sharedCreds = credentials.NewSharedCredentials("", profile)
-	}
-
-	// Try to get credentials
-	credValue, err := sharedCreds.Get()
-	if err != nil {
-		fmt.Printf("   ⚠️  %s profile not found or invalid\n", displayName)
-		return
-	}
-
-	fmt.Printf("   ✅ %s credentials loaded successfully\n", displayName)
-	fmt.Printf("      Provider: %s\n", credValue.ProviderName)
-	fmt.Printf("      Client ID: %s\n", maskCredential(credValue.ClientID))
-	if credValue.BaseURL != "" {
-		fmt.Printf("      Base URL: %s\n", credValue.BaseURL)
-	}
-
-	// Test creating a session with these credentials
-	fmt.Printf("   🚀 Testing session creation with %s profile...\n", displayName)
-	session := datacrunch.NewSession()
-	if session != nil {
-		// Create a client to verify it works
-		client := datacrunch.New(datacrunch.WithCredentialsProvider(sharedCreds))
-
-		// Quick test - try to list instance types
-		instanceTypes, err := client.InstanceTypes.ListInstanceTypes()
-		if err != nil {
-			fmt.Printf("   ⚠️  API test failed (this is expected with invalid credentials)\n")
-		} else {
-			fmt.Printf("   🎉 API test succeeded! Found %d instance types\n", len(instanceTypes))
-		}
-	}
-}
-
-func maskCredential(credential string) string {
-	if len(credential) <= 8 {
-		return "***"
-	}
-	if len(credential) <= 12 {
-		return credential[:4] + "***"
-	}
-	return credential[:4] + "..." + credential[len(credential)-4:]
+	fmt.Println("\n✅ Advanced example finished successfully!")
+	fmt.Println("\n💡 Advanced usage patterns shown:")
+	fmt.Println("  - Direct, fine-grained service instantiation")
+	fmt.Println("  - Session sharing across multiple services")
+	fmt.Println("  - Efficient memory usage (instantiate only required services)")
+	fmt.Println("  - Profile-based credential and environment management")
+	fmt.Println("  - Custom configuration for different deployment environments")
 }
 
 /*
 🚀 How to run this advanced example:
 
-1. Set your credentials
+1. Set your credentials:
    export DATACRUNCH_CLIENT_ID="your-client-id"
    export DATACRUNCH_CLIENT_SECRET="your-client-secret"
-   or create a $HOME/.datacrunch/credentials file with the following content:
+   # Or create a $HOME/.datacrunch/credentials file:
    [default]
    client_id = your-client-id
    client_secret = your-client-secret
@@ -218,19 +152,19 @@ func maskCredential(credential string) string {
 
 This demonstrates advanced SDK usage patterns:
 
-1. Direct Service Creation:
-   - Create services directly from a session
+1. Direct Service Instantiation:
+   - Instantiate services directly from a session
    - Fine-grained control over service lifecycle
-   - Memory efficient (create only what you need)
+   - Only create the services you need for efficiency
 
-2. Shared Credentials Testing:
+2. Profile and Environment Management:
    - Test different credential profiles (default, staging, production)
-   - Verify profile-based credential loading
-   - Test API connectivity with different environments
+   - Validate profile-based credential loading
+   - Test API connectivity for multiple environments
 
 💡 Use these patterns when you:
-- Need environment-specific configurations
-- Want memory efficiency in microservices
-- Require fine-grained control over SDK components
-- Need to test multiple credential profiles
+- Need to configure for multiple environments
+- Want to optimize memory usage in microservices
+- Require precise control over SDK components
+- Need to test or switch between multiple credential profiles
 */

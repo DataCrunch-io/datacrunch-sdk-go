@@ -20,78 +20,36 @@ export DATACRUNCH_CLIENT_ID="your-client-id"
 export DATACRUNCH_CLIENT_SECRET="your-client-secret"
 ```
 
-💡 Get your credentials from: https://datacrunch.io/account/api
+💡 Get your credentials from: <https://datacrunch.io/account/api>
 
 ### 2. Basic usage
 
-```go
-package main
+See **[examples/basic/](examples/basic/)** for complete working examples.
 
-import (
-    "fmt"
-    "log"
-    "github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
-)
+## Authentication
 
-func main() {
-    // Create client - SDK automatically finds credentials
-    client := datacrunch.New()
-    
-    // List instance types
-    instanceTypes, err := client.InstanceTypes.ListInstanceTypes()
-    if err != nil {
-        log.Fatalf("Error: %v", err)
-    }
-    
-    fmt.Printf("Found %d instance types\n", len(instanceTypes))
-    
-    // List your instances  
-    instances, err := client.Instance.ListInstances()
-    if err != nil {
-        log.Fatalf("Error: %v", err)
-    }
-    
-    fmt.Printf("Found %d instances\n", len(instances))
-}
-```
-
-## How It Works
-
-The SDK uses an **AWS-style credential chain** that automatically finds your credentials:
+The SDK uses an **AWS-style credential chain** with flexible configuration:
 
 1. **Environment variables** (highest priority)
    - `DATACRUNCH_CLIENT_ID` + `DATACRUNCH_CLIENT_SECRET`
+   - `DATACRUNCH_BASE_URL` (optional)
 
 2. **Shared credentials file**
    - Location: `~/.datacrunch/credentials`
-   - Supports multiple profiles (default, staging, production, etc.)
+   - Multiple profiles (default, staging, production, etc.)
+   - INI format with profile sections
 
-3. **Static credentials** (fallback)
+3. **Static credentials**
+   - Programmatically configured
+   - Useful for testing and development
 
-## Examples
-
-Comprehensive examples are available in the [`examples/`](examples/) directory:
-
-- **[`basic/`](examples/basic/)** - Simple unified client usage
-- **[`advanced/`](examples/advanced/)** - Direct service creation and shared credentials
-
-### Run examples
-
-```bash
-# Set credentials
-export DATACRUNCH_CLIENT_ID="your-client-id"
-export DATACRUNCH_CLIENT_SECRET="your-client-secret"
-
-# Run basic example
-cd examples/basic && go run main.go
-
-# Run advanced example  
-cd examples/advanced && go run main.go
-```
+4. **Custom credential providers**
+   - Environment-only, credentials-file-only, or custom chains
+   - Full control over credential resolution order
 
 ## Available Services
 
-| Service | Description | 
+| Service | Description |
 |---------|-------------|
 | **Instance** | Manage compute instances |
 | **InstanceTypes** | Query available hardware |
@@ -100,28 +58,50 @@ cd examples/advanced && go run main.go
 | **StartScripts** | Startup automation |
 | **Locations** | Datacenter regions |
 
-## Two Usage Approaches
+## Examples
 
-### Basic Approach (Recommended)
-```go
-client := datacrunch.New()
-// All services available: client.Instance, client.InstanceTypes, etc.
+Comprehensive examples are available in the [`examples/`](examples/) directory:
+
+- **[`basic/`](examples/basic/)** - Session-based service usage
+- **[`advanced/`](examples/advanced/)** - Custom credential providers and configuration
+
+### Run examples
+
+```bash
+# Set credentials
+export DATACRUNCH_CLIENT_ID="your-client-id"
+export DATACRUNCH_CLIENT_SECRET="your-client-secret"
+
+# Run examples
+cd examples/basic && go run main.go
+
+# Set up your credential files
+cd examples/advanced && go run main.go
 ```
 
-### Advanced Approach  
-```go
-session := datacrunch.NewSession()
-instanceService := instance.New(session)
-// Create only services you need
-```
+## Usage Patterns
 
-See [`examples/`](examples/) for detailed usage patterns and credential configurations.
+The SDK uses a **session-based approach**:
+
+- Create a session that manages credentials and configuration
+- Instantiate only the services you need
+- Memory efficient with fine-grained control
+- Supports all credential provider types
+
+### Configuration Options
+
+- **Debug logging**: Enable with `session.WithDebug(true)`
+- **Custom base URLs**: For different environments
+- **Flexible credential providers**: Environment, shared files, static, or custom chains
+- **Profile support**: Multiple credential profiles in shared files
+
+See [`examples/`](examples/) for detailed implementation patterns.
 
 ## Getting Help
 
 - 📖 **Documentation**: [pkg.go.dev](https://pkg.go.dev/github.com/datacrunch-io/datacrunch-sdk-go)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/datacrunch-io/datacrunch-sdk-go/issues)
-- 💬 **Community**: [DataCrunch Discord](https://discord.gg/datacrunch)
+<!-- - 💬 **Community**: [DataCrunch Discord](https://discord.gg/datacrunch) -->
 - 📧 **Support**: support@datacrunch.io
 
 ## License

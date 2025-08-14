@@ -10,6 +10,7 @@ import (
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/defaults"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
 )
 
 // Session provides a shared configuration and state for service clients
@@ -34,6 +35,9 @@ type Options struct {
 	// Retry configuration
 	MaxRetries *int
 	Retryer    interface{}
+
+	// Logging configuration
+	Debug bool
 }
 
 // DefaultOptions returns default session options with sensible retry defaults
@@ -43,6 +47,7 @@ func DefaultOptions() *Options {
 		BaseURL:    "https://api.datacrunch.io/v1",
 		Timeout:    30 * time.Second,
 		MaxRetries: &defaultMaxRetries, // Default to 3 retries for resilience
+		Debug:      false,
 	}
 }
 
@@ -84,7 +89,11 @@ func New(options ...func(*Options)) *Session {
 		MaxRetries:  opts.MaxRetries,
 		Retryer:     opts.Retryer,
 		Credentials: creds,
+		Debug:       opts.Debug,
 	}
+
+	// setup logger
+	logger.SetupFromConfig(cfg.Debug, nil)
 
 	return &Session{
 		Config:      cfg,
@@ -138,6 +147,7 @@ func NewFromEnv(options ...func(*Options)) *Session {
 		MaxRetries:  opts.MaxRetries,
 		Retryer:     opts.Retryer,
 		Credentials: envCreds,
+		Debug:       opts.Debug,
 	}
 
 	return &Session{
@@ -199,6 +209,13 @@ func WithCredentialsProvider(creds *credentials.Credentials) func(*Options) {
 func WithCredentialChainVerboseErrors(verbose bool) func(*Options) {
 	return func(o *Options) {
 		o.CredentialsChainVerboseErrors = &verbose
+	}
+}
+
+// WithDebug sets the debug mode
+func WithDebug(debug bool) func(*Options) {
+	return func(o *Options) {
+		o.Debug = debug
 	}
 }
 

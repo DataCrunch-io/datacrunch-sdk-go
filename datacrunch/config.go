@@ -20,8 +20,8 @@ type Config struct {
 	MaxRetries *int
 	Retryer    interface{}
 
-	// Logging configuration
-	Debug  *bool
+	// Logging configuration default to false
+	Debug  bool
 	Logger *slog.Logger
 }
 
@@ -56,15 +56,21 @@ func (c *Config) Copy(cfgs ...*Config) *Config {
 		if cfg.Retryer != nil {
 			newConfig.Retryer = cfg.Retryer
 		}
-		if cfg.Debug != nil {
-			newConfig.Debug = cfg.Debug
-		}
 		if cfg.Logger != nil {
 			newConfig.Logger = cfg.Logger
 		}
 	}
 
 	return newConfig
+}
+
+// New creates a new Config
+func NewConfig(options ...Option) *Config {
+	cfg := &Config{}
+	for _, option := range options {
+		option(cfg)
+	}
+	return cfg
 }
 
 // WithBaseURL sets the base URL for the API
@@ -123,7 +129,7 @@ func WithNoRetries() Option {
 // WithDebug enables or disables debug logging
 func WithDebug(debug bool) Option {
 	return func(c *Config) {
-		c.Debug = &debug
+		c.Debug = debug
 	}
 }
 

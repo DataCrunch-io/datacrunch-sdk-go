@@ -5,6 +5,46 @@ All notable changes to the DataCrunch Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-01-14
+
+### Added
+- Enhanced credential provider system with flexible configuration options
+- Support for custom credential chains and single provider configurations  
+- New `WithDebug()` and `WithLogger()` configuration options
+- Structured logging throughout the SDK using `slog`
+- Better credential provider examples in `examples/advanced/main.go`
+- Support for profile-based credential management with `~/.datacrunch/credentials`
+- Custom unmarshal handlers for advanced API response processing
+
+### Changed
+- **BREAKING**: Moved `datacrunch/config/config.go` to `datacrunch/config.go` (package consolidation)
+- **BREAKING**: Changed `Config.Debug` from `*bool` to `bool` for simpler usage
+- Improved OAuth2 authentication handler with better error handling and logging
+- Enhanced session management with integrated debug support
+- Updated credential chain to use structured logging instead of `log.Printf`
+- Better request configuration handling and BaseURL extraction
+
+### Improved
+- More detailed error messages in credential chain failures
+- Flexible credential provider configuration patterns:
+  - Environment variables only: `credentials.NewEnvCredentials()`
+  - Shared credentials only: `credentials.NewSharedCredentials("", "profile")`  
+  - Static credentials: `WithCredentials(clientID, clientSecret)`
+  - Custom chains: `credentials.NewChainCredentials([]Provider{...})`
+- Enhanced example documentation with multiple credential configuration patterns
+- Cleaner package structure and reduced import complexity
+
+### Removed
+- Deprecated example files (`context_example.go`, `example_usage.go`, `global_example.go`)
+- Old example directory structure with outdated patterns
+- Unused bearer token authentication code paths
+
+### Fixed
+- OAuth2 token refresh error handling and retry logic
+- Credential extraction from request configurations
+- Session initialization with proper credential chain setup
+- Response body reading in custom unmarshal handlers
+
 ## [1.0.0] - 2025-08-11
 
 ### Added
