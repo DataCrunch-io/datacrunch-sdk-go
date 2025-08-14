@@ -1,0 +1,79 @@
+```release-note:breaking-change
+Move config package from datacrunch/config/config.go to datacrunch/config.go for better package organization
+```
+
+```release-note:breaking-change
+Change Config.Debug from *bool to bool for simpler usage
+```
+
+```release-note:feature
+Add enhanced credential provider system with flexible configuration options
+```
+
+```release-note:feature
+Add support for custom credential chains and single provider configurations
+```
+
+```release-note:feature
+Add WithDebug() and WithLogger() configuration options for better logging control
+```
+
+```release-note:feature
+Add structured logging throughout SDK using slog for consistent log output
+```
+
+```release-note:feature
+Add profile-based credential management with ~/.datacrunch/credentials file support
+```
+
+```release-note:feature
+Add custom unmarshal handlers for advanced API response processing
+```
+
+```release-note:enhancement
+Improve OAuth2 authentication handler with better error handling and logging
+```
+
+```release-note:enhancement
+Enhance session management with integrated debug support
+```
+
+```release-note:enhancement
+Update credential chain to use structured logging instead of log.Printf
+```
+
+```release-note:enhancement
+Improve request configuration handling and BaseURL extraction
+```
+
+```release-note:enhancement
+Add more detailed error messages in credential chain failures
+```
+
+```release-note:enhancement
+Add flexible credential provider configuration patterns for environment-only, credentials-file-only, static, and custom chains
+```
+
+```release-note:enhancement
+Enhance example documentation with multiple credential configuration patterns
+```
+
+```release-note:enhancement
+Clean up package structure and reduce import complexity
+```
+
+```release-note:bug
+Fix OAuth2 token refresh error handling and retry logic
+```
+
+```release-note:bug
+Fix credential extraction from request configurations
+```
+
+```release-note:bug
+Fix session initialization with proper credential chain setup
+```
+
+```release-note:bug
+Fix response body reading in custom unmarshal handlers
+```

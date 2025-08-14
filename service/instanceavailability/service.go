@@ -1,9 +1,9 @@
 package instanceavailability
 
 import (
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/config"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
@@ -40,14 +40,14 @@ var initRequest func(*request.Request)
 //
 //	// Create a InstanceAvailability client with additional configuration
 //	svc := instanceavailability.New(mySession, &client.Config{Timeout: 60 * time.Second})
-func New(p client.ConfigProvider, cfgs ...*config.Config) *InstanceAvailability {
+func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *InstanceAvailability {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 
 	return newClient(c.Config, c.Handlers)
 }
 
 // newClientWithHandlers creates, initializes and returns a new service client instance with session handlers.
-func newClient(cfg config.Config, handlers request.Handlers) *InstanceAvailability {
+func newClient(cfg datacrunch.Config, handlers request.Handlers) *InstanceAvailability {
 	svc := &InstanceAvailability{
 		Client: client.New(cfg, metadata.ClientInfo{
 			ServiceName: EndpointsID,
@@ -58,7 +58,7 @@ func newClient(cfg config.Config, handlers request.Handlers) *InstanceAvailabili
 
 	// Add protocol handlers for REST JSON
 	svc.Handlers.Build.PushBackNamed(restjson.BuildHandler)
-	svc.Handlers.Unmarshal.PushBackNamed(restjson.StandardUnmarshalHandler)
+	svc.Handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
 	svc.Handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
 
 	// Run custom client initialization if present

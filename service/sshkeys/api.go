@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
 // SSHKeyResponse represents an SSH key
@@ -63,6 +64,9 @@ func (c *SSHKey) CreateSSHKey(input *CreateSSHKeyInput) (*SSHKeyResponse, error)
 	var sshKey SSHKeyResponse
 	req := c.newRequest(op, input, &sshKey)
 
+	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
+
 	return &sshKey, req.Send()
 }
 
@@ -83,15 +87,23 @@ func (c *SSHKey) DeleteSSHKeys(input *DeleteSSHKeysInput) error {
 	return req.Send()
 }
 
+type DeleteSSHKeyInput struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
 // DeleteSSHKey deletes a single SSH key by ID
 func (c *SSHKey) DeleteSSHKey(id string) error {
 	op := &request.Operation{
 		Name:       "DeleteSSHKey",
 		HTTPMethod: "DELETE",
-		HTTPPath:   fmt.Sprintf("/sshkeys/%s", id),
+		HTTPPath:   "/sshkeys/{id}",
 	}
 
-	req := c.newRequest(op, nil, nil)
+	input := &DeleteSSHKeyInput{
+		ID: id,
+	}
+
+	req := c.newRequest(op, input, nil)
 
 	return req.Send()
 }

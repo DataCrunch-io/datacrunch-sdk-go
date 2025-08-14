@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/session"
+	"github.com/datacrunch-io/datacrunch-sdk-go/service/instance"
+	"github.com/datacrunch-io/datacrunch-sdk-go/service/instancetypes"
 )
 
 func main() {
@@ -12,13 +14,12 @@ func main() {
 	fmt.Println("==================================")
 	fmt.Println()
 
-	// Basic usage: Create client with datacrunch.New()
-	// The SDK automatically finds credentials from environment variables or ~/.datacrunch/credentials
-	fmt.Println("📦 Creating DataCrunch client...")
-	client := datacrunch.New()
+	// Create a new session with debug mode enabled
+	// sess := session.New(session.WithDebug(true))
+	sess := session.New()
 
 	// Verify credentials work
-	creds := client.Session.GetCredentials()
+	creds := sess.GetCredentials()
 	_, err := creds.Get()
 	if err != nil {
 		log.Fatalf("❌ No credentials found. Please set DATACRUNCH_CLIENT_ID and DATACRUNCH_CLIENT_SECRET environment variables")
@@ -26,8 +27,9 @@ func main() {
 	fmt.Println("✅ Client created successfully!")
 
 	// List available instance types
+	instanceTypesClient := instancetypes.New(sess)
 	fmt.Println("\n💻 Listing instance types...")
-	instanceTypes, err := client.InstanceTypes.ListInstanceTypes()
+	instanceTypes, err := instanceTypesClient.ListInstanceTypes()
 	if err != nil {
 		log.Fatalf("❌ Failed to list instance types: %v", err)
 	}
@@ -43,7 +45,8 @@ func main() {
 
 	// List current instances
 	fmt.Println("\n🖥️ Listing your instances...")
-	instances, err := client.Instance.ListInstances()
+	instanceClient := instance.New(sess)
+	instances, err := instanceClient.ListInstances(nil)
 	if err != nil {
 		log.Fatalf("❌ Failed to list instances: %v", err)
 	}
@@ -69,8 +72,6 @@ func main() {
 
 2. Run the example:
    go run main.go
-
-This demonstrates the simplest way to use the DataCrunch SDK - just call datacrunch.New()!
 
 💡 Get your credentials from: https://datacrunch.io/account/api
 */
