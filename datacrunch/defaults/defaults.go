@@ -1,6 +1,10 @@
 package defaults
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
@@ -19,6 +23,12 @@ func Handlers() request.Handlers {
 	handlers.Build.PushBackNamed(request.NamedHandler{
 		Name: "core.OAuth2AuthHandler",
 		Fn:   OAuth2AuthHandler,
+	})
+
+	// Add default error handling for ALL protocols - runs FIRST in unmarshal chain
+	handlers.Unmarshal.PushFront(request.NamedHandler{
+		Name: "core.DefaultErrorHandler",
+		Fn:   DefaultErrorHandler,
 	})
 
 	return handlers
@@ -71,6 +81,56 @@ func OAuth2AuthHandler(r *request.Request) {
 
 	// Add the Authorization header
 	r.HTTPRequest.Header.Set("Authorization", "Bearer "+token)
+}
+
+// DefaultErrorHandler handles HTTP error responses for ALL protocols
+// This runs FIRST in the unmarshal chain, before protocol-specific unmarshaling
+// When this handler sets r.Error, the request processing stops and doesn't continue to other unmarshal handlers
+func DefaultErrorHandler(r *request.Request) {
+	logger.Debug("DefaultErrorHandler: checking response status code %d", r.HTTPResponse.StatusCode)
+
+	// Only handle non-success status codes
+	if r.HTTPResponse.StatusCode >= 200 && r.HTTPResponse.StatusCode < 300 {
+		logger.Debug("DefaultErrorHandler: success status code, skipping error handling")
+		return // Continue to next handler (protocol-specific unmarshaling)
+	}
+
+	logger.Debug("DefaultErrorHandler: handling error response with status %d", r.HTTPResponse.StatusCode)
+
+	// Read the error response body
+	var errorBody string
+	if r.HTTPResponse.Body != nil {
+		body, err := io.ReadAll(r.HTTPResponse.Body)
+		if err != nil {
+			logger.Debug("DefaultErrorHandler: failed to read error response body: %v", err)
+			r.Error = fmt.Errorf("status code: %d, failed to read error response body: %s", r.HTTPResponse.StatusCode, err)
+			return // Stop processing - error is set
+		}
+		errorBody = string(body)
+		logger.Debug("DefaultErrorHandler: error response body: %s", errorBody)
+
+		// Close the original body
+		if err := r.HTTPResponse.Body.Close(); err != nil {
+			logger.Debug("DefaultErrorHandler: error closing response body: %v", err)
+		}
+
+		// Replace the closed body with a new reader containing the same data
+		// This allows other handlers to still read the body if needed
+		r.HTTPResponse.Body = io.NopCloser(bytes.NewReader(body))
+	}
+
+	// Collect request info for debugging
+	requestInfo := &dcerr.RequestInfo{
+		RequestURL:     r.HTTPRequest.URL.String(),
+		RequestHeaders: &r.HTTPRequest.Header,
+		RequestBody:    nil, // Request body is usually consumed during Build phase
+	}
+
+	// Create structured HTTP error
+	r.Error = dcerr.NewHTTPError(r.HTTPResponse.StatusCode, errorBody, requestInfo)
+	logger.Debug("DefaultErrorHandler: created HTTPError: %v", r.Error)
+	// When r.Error is set, the request processing stops and doesn't continue to other handlers
+	return
 }
 
 // SessionWithCredentials defines an interface for session-like objects with credentials

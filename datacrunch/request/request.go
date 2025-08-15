@@ -233,7 +233,14 @@ func (r *Request) getNextRequestBody() (body io.ReadCloser, err error) {
 // DataFilled returns true if the request's data for response deserialization
 // target has been set and is a valid.
 func (r *Request) DataFilled() bool {
-	return r.Data != nil && reflect.ValueOf(r.Data).Elem().IsValid()
+	if r.Data == nil {
+		return false
+	}
+	v := reflect.ValueOf(r.Data)
+	if v.Kind() == reflect.Ptr {
+		return v.Elem().IsValid()
+	}
+	return v.IsValid()
 }
 
 // SetBufferBody sets the request's body bytes.

@@ -1,11 +1,6 @@
 package instance
 
 import (
-	"fmt"
-	"io"
-	"net/http"
-
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
@@ -58,7 +53,7 @@ type ListInstancesResponse struct {
 	Storage         Storage  `json:"storage"`
 	Hostname        string   `json:"hostname"`
 	Description     string   `json:"description"`
-	Location        string   `json:"location"` // Changed from Location to string
+	Location        string   `json:"location"`
 	PricePerHour    float64  `json:"price_per_hour"`
 	IsSpot          bool     `json:"is_spot"`
 	InstanceType    string   `json:"instance_type"`
@@ -170,43 +165,10 @@ func (c *Instance) CreateInstance(input *CreateInstanceInput) (string, error) {
 	var instanceID string
 	req := c.newRequest(op, input, &instanceID)
 
-	// Add a custom unmarshal handler that checks status codes before unmarshaling
-	req.Handlers.Unmarshal.Clear()
-	req.Handlers.Unmarshal.PushBackNamed(request.NamedHandler{
-		Name: "instance.CreateInstanceUnmarshal",
-		Fn: func(r *request.Request) {
-			// read the response body and status code
-			if r.HTTPResponse.StatusCode != http.StatusOK &&
-				r.HTTPResponse.StatusCode != http.StatusCreated &&
-				r.HTTPResponse.StatusCode != http.StatusAccepted {
-				// read the error response body
-				var errorBody string
-				if r.HTTPResponse.Body != nil {
-					body, err := io.ReadAll(r.HTTPResponse.Body)
-					if err != nil {
-						r.Error = fmt.Errorf("status code: %d, failed to create volume and failed to read error response body: %s", r.HTTPResponse.StatusCode, err)
-						return
-					}
-					errorBody = string(body)
-				}
-				req := r.HTTPRequest
-				reqBody, err := io.ReadAll(req.Body)
-				if err != nil {
-					reqBody = nil
-				}
-				requestInfo := &dcerr.RequestInfo{
-					RequestURL:     req.URL.String(),
-					RequestHeaders: &req.Header,
-					RequestBody:    reqBody,
-				}
-				r.Error = dcerr.NewHTTPError(r.HTTPResponse.StatusCode, errorBody, requestInfo)
-				return
-			}
-
-			// Status code is success, use string unmarshaler for the instance ID
-			restjson.StringUnmarshal(r)
-		},
-	})
+	// Replace the JSON unmarshaler with string unmarshaler for the instance ID response
+	// The default error handler will still run first
+	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
+	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
 	err := req.Send()
 	if err != nil {

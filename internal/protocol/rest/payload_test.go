@@ -41,12 +41,12 @@ func TestPayloadMember(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "struct with non-structure payload type",
+			name: "struct with string payload type",
 			input: &struct {
 				_    struct{} `payload:"Body"`
-				Body string   `type:"string"` // not "structure"
+				Body string   `type:"string"` // string payload should now be supported
 			}{Body: "test"},
-			expected: nil,
+			expected: "test",
 		},
 		{
 			name: "struct with invalid payload field",

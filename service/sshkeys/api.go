@@ -5,13 +5,6 @@ import (
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
-// SSHKeyResponse represents an SSH key
-type SSHKeyResponse struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Key  string `json:"key"`
-}
-
 // CreateSSHKeyInput represents the input for creating a new SSH key
 type CreateSSHKeyInput struct {
 	Name string `json:"name"`
@@ -21,6 +14,12 @@ type CreateSSHKeyInput struct {
 // DeleteSSHKeysInput represents the input for deleting multiple SSH keys
 type DeleteSSHKeysInput struct {
 	Keys []string `json:"keys"`
+}
+
+type SSHKeyResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Key  string `json:"key"`
 }
 
 // ListSSHKeys lists all SSH keys
@@ -42,34 +41,34 @@ type GetSSHKeyInput struct {
 }
 
 // GetSSHKey gets a single SSH key by ID
-func (c *SSHKey) GetSSHKey(id string) (*SSHKeyResponse, error) {
+func (c *SSHKey) GetSSHKey(id string) ([]*SSHKeyResponse, error) {
 	op := &request.Operation{
 		Name:       "GetSSHKey",
 		HTTPMethod: "GET",
 		HTTPPath:   "/sshkeys/{id}",
 	}
 
-	var sshKey SSHKeyResponse
+	var sshKey []*SSHKeyResponse
 	req := c.newRequest(op, &GetSSHKeyInput{ID: id}, &sshKey)
 
-	return &sshKey, req.Send()
+	return sshKey, req.Send()
 }
 
 // CreateSSHKey creates a new SSH key
-func (c *SSHKey) CreateSSHKey(input *CreateSSHKeyInput) (*SSHKeyResponse, error) {
+func (c *SSHKey) CreateSSHKey(input *CreateSSHKeyInput) (string, error) {
 	op := &request.Operation{
 		Name:       "CreateSSHKey",
 		HTTPMethod: "POST",
 		HTTPPath:   "/sshkeys",
 	}
 
-	var sshKey SSHKeyResponse
+	var sshKey string
 	req := c.newRequest(op, input, &sshKey)
 
-	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
 	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
-	return &sshKey, req.Send()
+	return sshKey, req.Send()
 }
 
 // DeleteSSHKeys deletes multiple SSH keys

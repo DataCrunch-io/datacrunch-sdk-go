@@ -47,7 +47,7 @@ func unmarshalWithLocationName(v interface{}, stream io.Reader, caseInsensitive 
 	var raw interface{}
 	decoder := json.NewDecoder(stream)
 	decoder.UseNumber()
-	
+
 	if err := decoder.Decode(&raw); err != nil {
 		if err == io.EOF {
 			return nil
@@ -57,19 +57,20 @@ func unmarshalWithLocationName(v interface{}, stream io.Reader, caseInsensitive 
 
 	var converted interface{}
 	var presentFields map[string]bool
-	
+
 	// Handle different response types
 	switch rawData := raw.(type) {
 	case map[string]interface{}:
 		// Object response - convert field names and track present fields
-		converted, presentFields = convertMapKeysWithPresence(rawData, reflect.TypeOf(v), caseInsensitive)
+		converted, presentFields = convertMapKeys(rawData, reflect.TypeOf(v), caseInsensitive)
 	case []interface{}:
 		// Array response - convert each element if it's an object
+		elementType := getArrayElementType(reflect.TypeOf(v))
 		convertedArray := make([]interface{}, len(rawData))
 		for i, item := range rawData {
 			if itemMap, ok := item.(map[string]interface{}); ok {
 				// Convert field names for object elements in array
-				convertedItem, _ := convertMapKeysWithPresence(itemMap, getArrayElementType(reflect.TypeOf(v)), caseInsensitive)
+				convertedItem, _ := convertMapKeys(itemMap, elementType, caseInsensitive)
 				convertedArray[i] = convertedItem
 			} else {
 				// Keep non-object elements as-is
@@ -91,6 +92,7 @@ func unmarshalWithLocationName(v interface{}, stream io.Reader, caseInsensitive 
 	// Use standard JSON unmarshaling with proper type conversion
 	decoder2 := json.NewDecoder(bytes.NewReader(data))
 	decoder2.UseNumber()
+
 	if err := decoder2.Decode(v); err != nil {
 		return err
 	}
@@ -102,7 +104,7 @@ func unmarshalWithLocationName(v interface{}, stream io.Reader, caseInsensitive 
 		}
 		return handleSpecialFloats(reflect.ValueOf(v), rawMap)
 	}
-	
+
 	return nil
 }
 
@@ -118,21 +120,25 @@ func getArrayElementType(t reflect.Type) reflect.Type {
 	return t
 }
 
-// convertMapKeysWithPresence converts JSON field names back to struct field names and tracks field presence
-func convertMapKeysWithPresence(data map[string]interface{}, structType reflect.Type, caseInsensitive bool) (map[string]interface{}, map[string]bool) {
+// convertMapKeys converts JSON field names back to struct field names and tracks field presence
+func convertMapKeys(data map[string]interface{}, structType reflect.Type, caseInsensitive bool) (map[string]interface{}, map[string]bool) {
 	if structType.Kind() == reflect.Ptr {
 		structType = structType.Elem()
 	}
-	
+
 	if structType.Kind() != reflect.Struct {
 		return data, nil
 	}
 
 	result := make(map[string]interface{})
 	presentFields := make(map[string]bool)
-	
-	// Create mapping from locationName/json name to struct field name
-	fieldMapping := make(map[string]string)
+
+	// Create mapping from locationName/json name to struct info
+	type fieldInfo struct {
+		goFieldName   string
+		jsonFieldName string
+	}
+	fieldMapping := make(map[string]fieldInfo)
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		if field.PkgPath != "" {
@@ -140,25 +146,41 @@ func convertMapKeysWithPresence(data map[string]interface{}, structType reflect.
 		}
 
 		fieldName := field.Name
-		
+
+		// Determine the target JSON field name for standard unmarshaling
+		var targetJSONName string
+		if jsonName := field.Tag.Get("json"); jsonName != "" {
+			targetJSONName = strings.Split(jsonName, ",")[0]
+			if targetJSONName == "-" {
+				continue // Skip fields marked with json:"-"
+			}
+		} else {
+			targetJSONName = fieldName
+		}
+
+		info := fieldInfo{
+			goFieldName:   fieldName,
+			jsonFieldName: targetJSONName,
+		}
+
 		// Check locationName first, then json tag
 		if locName := field.Tag.Get("locationName"); locName != "" {
-			fieldMapping[locName] = fieldName
+			fieldMapping[locName] = info
 			if caseInsensitive {
-				fieldMapping[strings.ToLower(locName)] = fieldName
+				fieldMapping[strings.ToLower(locName)] = info
 			}
 		} else if jsonName := field.Tag.Get("json"); jsonName != "" {
 			name := strings.Split(jsonName, ",")[0]
 			if name != "-" {
-				fieldMapping[name] = fieldName
+				fieldMapping[name] = info
 				if caseInsensitive {
-					fieldMapping[strings.ToLower(name)] = fieldName
+					fieldMapping[strings.ToLower(name)] = info
 				}
 			}
 		} else {
-			fieldMapping[fieldName] = fieldName
+			fieldMapping[fieldName] = info
 			if caseInsensitive {
-				fieldMapping[strings.ToLower(fieldName)] = fieldName
+				fieldMapping[strings.ToLower(fieldName)] = info
 			}
 		}
 	}
@@ -169,24 +191,25 @@ func convertMapKeysWithPresence(data map[string]interface{}, structType reflect.
 		if caseInsensitive {
 			searchKey = strings.ToLower(jsonKey)
 		}
-		
-		if structFieldName, found := fieldMapping[searchKey]; found {
-			// Mark field as present
-			presentFields[structFieldName] = true
-			
+
+		if fieldInfo, found := fieldMapping[searchKey]; found {
+			// Mark field as present (using Go field name for presence tracking)
+			presentFields[fieldInfo.goFieldName] = true
+
 			// Recursively handle nested structures
 			if nestedMap, ok := jsonValue.(map[string]interface{}); ok {
 				// Find the field type for recursive processing
-				if field, found := structType.FieldByName(structFieldName); found {
+				if field, found := structType.FieldByName(fieldInfo.goFieldName); found {
 					fieldType := field.Type
 					if fieldType.Kind() == reflect.Ptr {
 						fieldType = fieldType.Elem()
 					}
-					convertedNested, _ := convertMapKeysWithPresence(nestedMap, fieldType, caseInsensitive)
+					convertedNested, _ := convertMapKeys(nestedMap, fieldType, caseInsensitive)
 					jsonValue = convertedNested
 				}
 			}
-			result[structFieldName] = jsonValue
+			// Use JSON field name for the result (for standard JSON unmarshaling)
+			result[fieldInfo.jsonFieldName] = jsonValue
 		} else {
 			// Keep the original key if no mapping found
 			result[jsonKey] = jsonValue
@@ -194,12 +217,6 @@ func convertMapKeysWithPresence(data map[string]interface{}, structType reflect.
 	}
 
 	return result, presentFields
-}
-
-// convertMapKeys converts JSON field names back to struct field names (legacy function for compatibility)
-func convertMapKeys(data map[string]interface{}, structType reflect.Type, caseInsensitive bool) map[string]interface{} {
-	result, _ := convertMapKeysWithPresence(data, structType, caseInsensitive)
-	return result
 }
 
 // handleFieldPresence handles omitempty fields based on their presence in JSON
@@ -217,14 +234,14 @@ func handleFieldPresence(v reflect.Value, presentFields map[string]bool, caseIns
 	for i := 0; i < v.NumField(); i++ {
 		field := vType.Field(i)
 		fieldValue := v.Field(i)
-		
+
 		if !fieldValue.CanSet() {
 			continue
 		}
 
 		fieldName := field.Name
 		jsonTag := field.Tag.Get("json")
-		
+
 		// Only process fields with omitempty tag
 		if jsonTag == "" || !strings.Contains(jsonTag, "omitempty") {
 			continue
@@ -232,12 +249,12 @@ func handleFieldPresence(v reflect.Value, presentFields map[string]bool, caseIns
 
 		// Check if field was present in JSON
 		wasPresent := presentFields[fieldName]
-		
+
 		// If field was not present and has omitempty, reset to zero value
 		if !wasPresent {
 			switch fieldValue.Kind() {
 			case reflect.String:
-				// For string fields with omitempty that are not present, 
+				// For string fields with omitempty that are not present,
 				// we need to distinguish from empty string that WAS present
 				// Since standard unmarshaling already happened, we can't change this
 				// without a more complex implementation using custom types
@@ -254,7 +271,7 @@ func handleFieldPresence(v reflect.Value, presentFields map[string]bool, caseIns
 	return nil
 }
 
-// handleSpecialFloats handles AWS-specific float values like "NaN", "Infinity"
+// handleSpecialFloats handles javascript special float values like "NaN", "Infinity"
 func handleSpecialFloats(v reflect.Value, rawData map[string]interface{}) error {
 	v = reflect.Indirect(v)
 	if v.Kind() != reflect.Struct {
@@ -265,7 +282,7 @@ func handleSpecialFloats(v reflect.Value, rawData map[string]interface{}) error 
 	for i := 0; i < v.NumField(); i++ {
 		field := vType.Field(i)
 		fieldValue := v.Field(i)
-		
+
 		if !fieldValue.CanSet() {
 			continue
 		}
@@ -298,7 +315,7 @@ func handleSpecialFloats(v reflect.Value, rawData map[string]interface{}) error 
 				default:
 					continue
 				}
-				
+
 				if fieldValue.Kind() == reflect.Float32 {
 					fieldValue.SetFloat(floatVal)
 				} else {

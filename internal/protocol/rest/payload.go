@@ -13,9 +13,14 @@ func PayloadMember(i interface{}) interface{} {
 		return nil
 	}
 
-	v := reflect.ValueOf(i).Elem()
+	var v reflect.Value
+	if reflect.TypeOf(i).Kind() != reflect.Ptr {
+		v = reflect.ValueOf(i)
+	} else {
+		v = reflect.ValueOf(i).Elem()
+	}
 	if !v.IsValid() {
-		logger.Debug("PayloadMember: reflect.ValueOf(i).Elem() is not valid")
+		logger.Debug("PayloadMember: value is not valid")
 		return nil
 	}
 	if field, ok := v.Type().FieldByName("_"); ok {
@@ -27,10 +32,9 @@ func PayloadMember(i interface{}) interface{} {
 				logger.Debug("PayloadMember: field %s not found in struct", payloadName)
 				return nil
 			}
-			if field.Tag.Get("type") != "structure" {
-				logger.Debug("PayloadMember: field %s type is not 'structure', got: %s", payloadName, field.Tag.Get("type"))
-				return nil
-			}
+			// Allow any payload type (string, structure, blob, etc.)
+			payloadType := field.Tag.Get("type")
+			logger.Debug("PayloadMember: field %s type is: %s", payloadName, payloadType)
 
 			payload := v.FieldByName(payloadName)
 			if payload.IsValid() || (payload.Kind() == reflect.Ptr && !payload.IsNil()) {
