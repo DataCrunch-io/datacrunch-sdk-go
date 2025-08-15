@@ -1,0 +1,43 @@
+```release-note:feature
+Add comprehensive error handling documentation and examples in docs/ERROR_HANDLING.md
+```
+
+```release-note:feature
+Add error handling integration example with practical usage patterns in examples/error-handling/
+```
+
+```release-note:feature
+Add integration tests for all service packages to improve SDK reliability and testing coverage
+```
+
+```release-note:enhancement
+Improve default error handling with centralized DefaultErrorHandler for consistent error processing across all protocols
+```
+
+```release-note:enhancement
+Enhance JSON unmarshaling with better error handling and struct field validation
+```
+
+```release-note:enhancement
+Improve REST protocol handling with enhanced payload processing and unmarshal capabilities
+```
+
+```release-note:enhancement
+Update build system with improved Makefile for better development workflow
+```
+
+```release-note:enhancement
+Refactor internal protocol handling for better separation of concerns between JSON and REST protocols
+```
+
+```release-note:bug
+Fix request configuration and error handling in service API implementations
+```
+
+```release-note:bug
+Fix JSON unmarshaling edge cases and improve error reporting for malformed responses
+```
+
+```release-note:bug
+Remove stray binary file from repository to keep codebase clean
+```

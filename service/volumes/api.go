@@ -75,8 +75,23 @@ type VolumeActionInput struct {
 	LocationCode string   `json:"location_code,omitempty"`
 }
 
+// VolumeStatus represents the possible status values for a volume.
+type VolumeStatus string
+
+const (
+	VolumeStatusOrdered   VolumeStatus = "ordered"
+	VolumeStatusAttached  VolumeStatus = "attached"
+	VolumeStatusAttaching VolumeStatus = "attaching"
+	VolumeStatusDetached  VolumeStatus = "detached"
+	VolumeStatusDeleted   VolumeStatus = "deleted"
+)
+
+type ListVolumesStatus struct {
+	Status VolumeStatus `json:"status"`
+}
+
 // ListVolumes lists all volumes
-func (c *Volumes) ListVolumes() ([]*VolumeResponse, error) {
+func (c *Volumes) ListVolumes(status *ListVolumesStatus) ([]*VolumeResponse, error) {
 	op := &request.Operation{
 		Name:       "ListVolumes",
 		HTTPMethod: "GET",
@@ -84,7 +99,7 @@ func (c *Volumes) ListVolumes() ([]*VolumeResponse, error) {
 	}
 
 	var volumes []*VolumeResponse
-	req := c.newRequest(op, nil, &volumes)
+	req := c.newRequest(op, status, &volumes)
 
 	return volumes, req.Send()
 }
@@ -118,7 +133,7 @@ func (c *Volumes) CreateVolume(input *CreateVolumeInput) (string, error) {
 	var volumeID string
 	req := c.newRequest(op, input, &volumeID)
 
-	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
 	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
 	return volumeID, req.Send()

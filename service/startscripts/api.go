@@ -81,7 +81,7 @@ func (c *StartScripts) CreateStartScript(input *CreateStartScriptInput) (string,
 	req := c.newRequest(op, input, &scriptID)
 
 	// This API returns a plain string, not JSON, so use string unmarshaler
-	req.Handlers.Unmarshal.Clear()
+	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
 	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
 	return scriptID, req.Send()

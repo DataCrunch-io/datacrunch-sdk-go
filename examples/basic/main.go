@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
 	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/session"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/instance"
+	"github.com/datacrunch-io/datacrunch-sdk-go/service/instanceavailability"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/instancetypes"
 )
 
@@ -15,8 +17,8 @@ func main() {
 	fmt.Println()
 
 	// Create a new session with debug mode enabled
-	// sess := session.New(session.WithDebug(true))
-	sess := session.New()
+	sess := session.New(session.WithDebug(false))
+	// sess := session.New()
 
 	// Verify credentials work
 	creds := sess.GetCredentials()
@@ -49,6 +51,9 @@ func main() {
 	instances, err := instanceClient.ListInstances(nil)
 	if err != nil {
 		log.Fatalf("❌ Failed to list instances: %v", err)
+		if httpErr, ok := dcerr.IsHTTPError(err); ok {
+			fmt.Printf("❌ HTTP error: %v\n", httpErr)
+		}
 	}
 
 	if len(instances) == 0 {
@@ -58,6 +63,18 @@ func main() {
 		for _, inst := range instances {
 			fmt.Printf("  - %s (%s): %s\n", inst.Hostname, inst.ID, inst.Status)
 		}
+	}
+
+	// create an instanceavailability client
+	instanceAvailabilityClient := instanceavailability.New(sess)
+	instanceAvailability, err := instanceAvailabilityClient.ListInstanceAvailability()
+	if err != nil {
+		log.Fatalf("❌ Failed to list instance availability: %v", err)
+	}
+
+	fmt.Printf("Found %d instance availability(s):\n", len(instanceAvailability))
+	for _, ia := range instanceAvailability {
+		fmt.Printf("  - %s: %s\n", ia.LocationCode, ia.Availabilities)
 	}
 
 	fmt.Println("\n🎉 Basic example completed!")

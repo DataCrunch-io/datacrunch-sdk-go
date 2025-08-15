@@ -53,7 +53,13 @@ var BuildHandler = request.NamedHandler{Name: "rest.Build", Fn: Build}
 func Build(r *request.Request) {
 	logger.Debug("rest.Build called with ParamsFilled=%v", r.ParamsFilled())
 	if r.ParamsFilled() {
-		v := reflect.ValueOf(r.Params).Elem()
+		// check if r.Params is a pointer
+		var v reflect.Value
+		if reflect.TypeOf(r.Params).Kind() != reflect.Ptr {
+			v = reflect.ValueOf(r.Params)
+		} else {
+			v = reflect.ValueOf(r.Params).Elem()
+		}
 		logger.Debug("rest.Build: building location elements for type %T", r.Params)
 		buildLocationElements(r, v, false)
 		buildBody(r, v)
@@ -65,7 +71,13 @@ func Build(r *request.Request) {
 func BuildAsGET(r *request.Request) {
 	logger.Debug("rest.BuildAsGET called with ParamsFilled=%v", r.ParamsFilled())
 	if r.ParamsFilled() {
-		v := reflect.ValueOf(r.Params).Elem()
+		// check if r.Params is a pointer
+		var v reflect.Value
+		if reflect.TypeOf(r.Params).Kind() != reflect.Ptr {
+			v = reflect.ValueOf(r.Params)
+		} else {
+			v = reflect.ValueOf(r.Params).Elem()
+		}
 		logger.Debug("rest.BuildAsGET: building location elements for type %T", r.Params)
 		buildLocationElements(r, v, true)
 		buildBody(r, v)
@@ -150,6 +162,12 @@ func buildBody(r *request.Request, v reflect.Value) {
 	if params == nil {
 		logger.Debug("buildBody: params is nil, skipping body build")
 		return
+	}
+	
+	// Check if there's a payload member to use instead of the full params
+	if payloadMember := PayloadMember(params); payloadMember != nil {
+		logger.Debug("buildBody: using payload member instead of full params")
+		params = payloadMember
 	}
 
 	switch body := params.(type) {

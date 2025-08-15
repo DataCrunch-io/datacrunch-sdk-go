@@ -64,22 +64,27 @@ deps: ## Download and tidy dependencies
 	@go mod tidy
 	@go mod verify
 
-.PHONY: build
-build: deps ## Build all packages
-	@echo "$(BLUE)Building packages...$(NC)"
-	@go build ./...
-
-.PHONY: build-example
-build-example: deps ## Build example binary
-	@echo "$(BLUE)Building example binary...$(NC)"
-	@mkdir -p $(BUILD_DIR)
-	@go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) $(EXAMPLES_DIR)/basic/main.go
-	@echo "$(GREEN)Example binary built: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
-
 .PHONY: test
 test: deps ## Run tests
 	@echo "$(BLUE)Running tests...$(NC)"
 	@go test -v ./...
+
+.PHONY: integration-test
+integration-test: deps ## Run integration tests
+	@echo "$(BLUE)Running integration tests...$(NC)"
+	@go test -v -tags="integration" ./service/...
+
+.PHONY: test-unit
+test-unit: deps ## Run unit tests only (fast, no external dependencies)
+	@echo "$(BLUE)Running unit tests...$(NC)"
+	@go test -v -tags="unit" ./...
+
+.PHONY: test-protocol
+test-protocol: deps ## Run protocol layer tests with coverage
+	@echo "$(BLUE)Testing protocol layer...$(NC)"
+	@mkdir -p $(COVERAGE_DIR)
+	@go test -v -coverprofile=$(COVERAGE_DIR)/protocol_coverage.out ./internal/protocol/...
+	@go tool cover -func=$(COVERAGE_DIR)/protocol_coverage.out | tail -1
 
 .PHONY: test-coverage
 test-coverage: deps ## Run tests with coverage
@@ -93,11 +98,6 @@ test-coverage: deps ## Run tests with coverage
 test-race: deps ## Run tests with race detection
 	@echo "$(BLUE)Running tests with race detection...$(NC)"
 	@go test -v -race ./...
-
-.PHONY: benchmark
-benchmark: deps ## Run benchmarks
-	@echo "$(BLUE)Running benchmarks...$(NC)"
-	@go test -bench=. -benchmem ./...
 
 .PHONY: lint
 lint: ## Run golangci-lint

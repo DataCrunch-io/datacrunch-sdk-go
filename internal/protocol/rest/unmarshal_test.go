@@ -227,25 +227,25 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 			name:     "string header",
 			header:   "test-value",
 			target:   func() interface{} { var s *string; return &s }(),
-			expected: func() interface{} { s := "test-value"; return &s }(),
+			expected: func() interface{} { var s *string; str := "test-value"; s = &str; return &s }(),
 		},
 		{
-			name:     "int64 header",
+			name:     "int64 header", 
 			header:   "42",
 			target:   func() interface{} { var i *int64; return &i }(),
-			expected: func() interface{} { i := int64(42); return &i }(),
+			expected: func() interface{} { var i *int64; val := int64(42); i = &val; return &i }(),
 		},
 		{
 			name:     "float64 header",
 			header:   "3.14",
 			target:   func() interface{} { var f *float64; return &f }(),
-			expected: func() interface{} { f := 3.14; return &f }(),
+			expected: func() interface{} { var f *float64; val := 3.14; f = &val; return &f }(),
 		},
 		{
 			name:     "bool header",
 			header:   "true",
 			target:   func() interface{} { var b *bool; return &b }(),
-			expected: func() interface{} { b := true; return &b }(),
+			expected: func() interface{} { var b *bool; val := true; b = &val; return &b }(),
 		},
 		{
 			name:    "invalid int64",
@@ -257,7 +257,8 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := reflect.ValueOf(tt.target).Elem()
+			// tt.target is a pointer to pointer, we need to get the inner pointer 
+			v := reflect.ValueOf(tt.target).Elem() // This gives us the *string
 			err := unmarshalHeader(v, tt.header, tt.tag)
 
 			if tt.wantErr {
@@ -272,13 +273,13 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 				return
 			}
 
-			// Compare results by dereferencing pointers for comparison
-			targetPtr := reflect.ValueOf(tt.target).Elem()
-			expectedPtr := reflect.ValueOf(tt.expected).Elem()
+			// Compare results - both target and expected are pointers to pointers
+			// tt.target is **T, tt.expected is **T
+			targetPtr := reflect.ValueOf(tt.target).Elem()  // *T
+			expectedPtr := reflect.ValueOf(tt.expected).Elem()  // *T
 			
-			// Handle pointer comparison safely
+			// Both should be pointers, check if they're nil first
 			if targetPtr.Kind() == reflect.Ptr && expectedPtr.Kind() == reflect.Ptr {
-				// Both should be pointers to the same type
 				if targetPtr.IsNil() && expectedPtr.IsNil() {
 					return // both nil, test passes
 				}
@@ -287,25 +288,14 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 					return
 				}
 				
-				// Dereference and compare values
-				targetVal := targetPtr.Elem().Interface()
-				expectedVal := expectedPtr.Elem().Interface()
+				// Dereference both pointers to get the actual values
+				targetVal := targetPtr.Elem().Interface()  // T
+				expectedVal := expectedPtr.Elem().Interface()  // T
 				if !reflect.DeepEqual(targetVal, expectedVal) {
 					t.Errorf("expected %+v, got %+v", expectedVal, targetVal)
 				}
 			} else {
-				// Direct comparison for non-pointer types
-				// For this test, both target and expected should actually be pointers
-				// We need to dereference both to compare the actual values
-				if targetPtr.Kind() == reflect.Ptr && !targetPtr.IsNil() && expectedPtr.Kind() == reflect.Ptr && !expectedPtr.IsNil() {
-					targetVal := targetPtr.Elem().Interface()
-					expectedVal := expectedPtr.Elem().Interface()
-					if !reflect.DeepEqual(targetVal, expectedVal) {
-						t.Errorf("expected %+v, got %+v", expectedVal, targetVal)
-					}
-				} else if !reflect.DeepEqual(targetPtr.Interface(), expectedPtr.Interface()) {
-					t.Errorf("expected %+v, got %+v", expectedPtr.Interface(), targetPtr.Interface())
-				}
+				t.Errorf("expected both values to be pointers, got target kind: %v, expected kind: %v", targetPtr.Kind(), expectedPtr.Kind())
 			}
 		})
 	}
