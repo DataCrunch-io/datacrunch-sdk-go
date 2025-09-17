@@ -13,9 +13,9 @@ import (
 var serviceTemplate = `package {{.PackageName}}
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 

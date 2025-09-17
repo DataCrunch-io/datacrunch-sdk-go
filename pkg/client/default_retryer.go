@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/util"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // DefaultRetryer implements basic retry logic using exponential backoff for

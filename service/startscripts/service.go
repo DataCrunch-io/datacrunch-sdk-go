@@ -1,11 +1,11 @@
 package startscripts
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 const (
@@ -28,13 +28,13 @@ var initClient func(*client.Client)
 var initRequest func(*request.Request)
 
 // New creates a new instance of the StartScripts client with a config provider.
-func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *StartScripts {
+func New(p client.ConfigProvider, cfgs ...*config.Config) *StartScripts {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 	return newClient(c.Config, c.Handlers)
 }
 
 // newClient creates, initializes and returns a new service client instance.
-func newClient(cfg datacrunch.Config, handlers request.Handlers) *StartScripts {
+func newClient(cfg config.Config, handlers request.Handlers) *StartScripts {
 
 	svc := &StartScripts{
 		Client: client.New(cfg, metadata.ClientInfo{

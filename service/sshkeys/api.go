@@ -1,8 +1,8 @@
 package sshkeys
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // CreateSSHKeyInput represents the input for creating a new SSH key

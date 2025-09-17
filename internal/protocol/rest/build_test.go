@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 func TestBuild_URIParameters(t *testing.T) {
@@ -53,7 +53,7 @@ func TestBuild_URIParameters(t *testing.T) {
 			// Create mock request
 			httpReq, _ := http.NewRequest("GET", "", nil)
 			httpReq.URL, _ = url.Parse(tt.basePath)
-			
+
 			req := &request.Request{
 				HTTPRequest: httpReq,
 				Params:      tt.params,
@@ -124,7 +124,7 @@ func TestBuild_QueryParameters(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request
 			httpReq, _ := http.NewRequest("GET", "http://example.com", nil)
-			
+
 			req := &request.Request{
 				HTTPRequest: httpReq,
 				Params:      tt.params,
@@ -173,8 +173,8 @@ func TestBuild_HeaderParameters(t *testing.T) {
 		{
 			name: "multiple headers",
 			params: &struct {
-				Auth    string `location:"header" locationName:"Authorization"`
-				Type    string `location:"header" locationName:"Content-Type"`
+				Auth string `location:"header" locationName:"Authorization"`
+				Type string `location:"header" locationName:"Content-Type"`
 			}{
 				Auth: "Bearer abc",
 				Type: "application/json",
@@ -205,7 +205,7 @@ func TestBuild_HeaderParameters(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request
 			httpReq, _ := http.NewRequest("GET", "http://example.com", nil)
-			
+
 			req := &request.Request{
 				HTTPRequest: httpReq,
 				Params:      tt.params,
@@ -238,10 +238,10 @@ func TestBuild_HeaderParameters(t *testing.T) {
 
 func TestBuild_PayloadBody(t *testing.T) {
 	tests := []struct {
-		name        string
-		params      interface{}
+		name         string
+		params       interface{}
 		expectedBody string
-		wantErr     bool
+		wantErr      bool
 	}{
 		{
 			name: "string payload",
@@ -265,7 +265,7 @@ func TestBuild_PayloadBody(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock request
 			httpReq, _ := http.NewRequest("POST", "http://example.com", nil)
-			
+
 			req := &request.Request{
 				HTTPRequest: httpReq,
 				Params:      tt.params,
@@ -309,7 +309,7 @@ func containsAllParams(actual, expected string) bool {
 	// Simple check - for production you'd want more robust comparison
 	actualParams := strings.Split(actual, "&")
 	expectedParams := strings.Split(expected, "&")
-	
+
 	for _, expectedParam := range expectedParams {
 		found := false
 		for _, actualParam := range actualParams {

@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 const (
@@ -163,7 +163,7 @@ func buildBody(r *request.Request, v reflect.Value) {
 		logger.Debug("buildBody: params is nil, skipping body build")
 		return
 	}
-	
+
 	// Check if there's a payload member to use instead of the full params
 	if payloadMember := PayloadMember(params); payloadMember != nil {
 		logger.Debug("buildBody: using payload member instead of full params")

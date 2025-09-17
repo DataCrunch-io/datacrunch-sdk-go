@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
 )
 
 // UnmarshalJSONError unmarshal's the reader's JSON document into the passed in

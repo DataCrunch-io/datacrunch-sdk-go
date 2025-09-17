@@ -5,19 +5,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/defaults"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
+	credentials2 "github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	defaults2 "github.com/datacrunch-io/datacrunch-sdk-go/pkg/defaults"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // Session provides a shared configuration and state for service clients
 type Session struct {
-	Config      *datacrunch.Config
+	Config      *config.Config
 	Handlers    request.Handlers
-	Credentials *credentials.Credentials
+	Credentials *credentials2.Credentials
 }
 
 // Options for configuring a session
@@ -29,7 +29,7 @@ type Options struct {
 	Timeout      time.Duration
 
 	// Credential configuration
-	Credentials                   *credentials.Credentials
+	Credentials                   *credentials2.Credentials
 	CredentialsChainVerboseErrors *bool
 
 	// Retry configuration
@@ -60,21 +60,21 @@ func New(options ...func(*Options)) *Session {
 	}
 
 	// Setup credentials
-	var creds *credentials.Credentials
+	var creds *credentials2.Credentials
 	if opts.Credentials != nil {
 		creds = opts.Credentials
 	} else if opts.ClientID != "" && opts.ClientSecret != "" {
 		// Use static credentials if provided directly
-		creds = credentials.NewStaticCredentials(opts.ClientID, opts.ClientSecret, opts.BaseURL)
+		creds = credentials2.NewStaticCredentials(opts.ClientID, opts.ClientSecret, opts.BaseURL)
 	} else {
 		// Use default credential chain
-		creds = defaults.CredChain()
+		creds = defaults2.CredChain()
 	}
 
 	var finalBaseURL string
 
 	// Check if BaseURL was explicitly set (different from default)
-	if opts.BaseURL != "" && opts.BaseURL != defaults.DefaultBaseURL {
+	if opts.BaseURL != "" && opts.BaseURL != defaults2.DefaultBaseURL {
 		finalBaseURL = opts.BaseURL
 	} else {
 		// Determine BaseURL with correct priority: env > credential file > default
@@ -83,7 +83,7 @@ func New(options ...func(*Options)) *Session {
 		}
 	}
 
-	cfg := &datacrunch.Config{
+	cfg := &config.Config{
 		BaseURL:     &finalBaseURL,
 		Timeout:     &opts.Timeout,
 		MaxRetries:  opts.MaxRetries,
@@ -97,7 +97,7 @@ func New(options ...func(*Options)) *Session {
 
 	return &Session{
 		Config:      cfg,
-		Handlers:    defaults.Handlers(),
+		Handlers:    defaults2.Handlers(),
 		Credentials: creds,
 	}
 }
@@ -112,8 +112,8 @@ func New(options ...func(*Options)) *Session {
 // - DATACRUNCH_TIMEOUT (optional, default: 30s, format: "30s", "1m", etc.)
 func NewFromEnv(options ...func(*Options)) *Session {
 	// Only use EnvProvider - no fallback to other credential sources
-	envProvider := &credentials.EnvProvider{}
-	envCreds := credentials.NewCredentials(envProvider)
+	envProvider := &credentials2.EnvProvider{}
+	envCreds := credentials2.NewCredentials(envProvider)
 
 	// Try to get credentials from environment - fail fast if missing required vars
 	credValue, err := envCreds.Get()
@@ -141,7 +141,7 @@ func NewFromEnv(options ...func(*Options)) *Session {
 	}
 
 	// Create session using the env-only credentials
-	cfg := &datacrunch.Config{
+	cfg := &config.Config{
 		BaseURL:     &opts.BaseURL,
 		Timeout:     &opts.Timeout,
 		MaxRetries:  opts.MaxRetries,
@@ -152,7 +152,7 @@ func NewFromEnv(options ...func(*Options)) *Session {
 
 	return &Session{
 		Config:      cfg,
-		Handlers:    defaults.Handlers(),
+		Handlers:    defaults2.Handlers(),
 		Credentials: envCreds,
 	}
 }
@@ -199,7 +199,7 @@ func WithTimeout(timeout time.Duration) func(*Options) {
 }
 
 // WithCredentials sets custom credentials
-func WithCredentialsProvider(creds *credentials.Credentials) func(*Options) {
+func WithCredentialsProvider(creds *credentials2.Credentials) func(*Options) {
 	return func(o *Options) {
 		o.Credentials = creds
 	}
@@ -220,7 +220,7 @@ func WithDebug(debug bool) func(*Options) {
 }
 
 // ClientConfig implements the client.ConfigProvider interface
-func (s *Session) ClientConfig(serviceName string, cfgs ...*datacrunch.Config) client.Config {
+func (s *Session) ClientConfig(serviceName string, cfgs ...*config.Config) client.Config {
 	s = s.Copy(cfgs...)
 	return client.Config{
 		Config:   *s.Config,
@@ -229,7 +229,7 @@ func (s *Session) ClientConfig(serviceName string, cfgs ...*datacrunch.Config) c
 	}
 }
 
-func (s *Session) Copy(cfgs ...*datacrunch.Config) *Session {
+func (s *Session) Copy(cfgs ...*config.Config) *Session {
 	newSession := &Session{
 		Config:   s.Config.Copy(cfgs...),
 		Handlers: s.Handlers.Copy(),
@@ -244,11 +244,11 @@ func initHandlers(s *Session) {
 }
 
 // ClientConfigNoResolveEndpoint implements the client.ConfigNoResolveEndpointProvider interface
-func (s *Session) ClientConfigNoResolveEndpoint(cfgs ...*interface{}) datacrunch.Config {
+func (s *Session) ClientConfigNoResolveEndpoint(cfgs ...*interface{}) config.Config {
 	return *s.Config
 }
 
 // GetCredentials returns the session's credentials (implements SessionWithCredentials interface)
-func (s *Session) GetCredentials() *credentials.Credentials {
+func (s *Session) GetCredentials() *credentials2.Credentials {
 	return s.Credentials
 }
