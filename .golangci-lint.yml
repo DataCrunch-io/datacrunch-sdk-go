@@ -24,21 +24,87 @@ linters-settings:
     local-prefixes: github.com/datacrunch-io/datacrunch-sdk-go
 
 linters:
-  # Start fresh - disable everything, enable only what we want
-  disable-all: true
+  default: none
   enable:
-    # Essential formatting
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - copyloopvar
+    - dogsled
+    - dupword
+    - embeddedstructfieldcheck
+    - errcheck
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - funcorder
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - goconst
     - gofmt
     - goimports
-    
-    # Basic code quality (no unused/staticcheck/errcheck)
-    - govet
-    - typecheck
+    - gomoddirectives
+    - goprintffuncname
+    - gosec
     - gosimple
+    - govet
+    - iface
+    - importas
+    - ineffassign
+    - intrange
+    - loggercheck
+    - makezero
+    - mirror
     - misspell
+    - nakedret
+    - nilnesserr
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - rowserrcheck
+    - staticcheck
+    - tagalign
+    - typecheck
     - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - usetesting
+    - wastedassign
     - whitespace
-
+  settings:
+    errcheck:
+      check-type-assertions: true
+    goconst:
+      min-len: 5
+    nolintlint:
+      require-specific: true
+    perfsprint:
+      strconcat: false
+    predeclared:
+      ignore:
+        - new
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - bodyclose
+          - funlen
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   exclude-files:
     - ".*_test\\.go$"
@@ -47,6 +113,16 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 
 severity:
   default-severity: error
