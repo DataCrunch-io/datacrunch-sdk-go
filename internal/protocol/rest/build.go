@@ -31,8 +31,6 @@ var noEscape [256]bool
 
 var errValueNotSet = fmt.Errorf("value not set")
 
-var byteSliceType = reflect.TypeOf([]byte{})
-
 func init() {
 	for i := 0; i < len(noEscape); i++ {
 		// Datacrunch expects every character except these to be escaped

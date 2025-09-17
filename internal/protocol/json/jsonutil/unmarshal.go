@@ -3,6 +3,7 @@ package jsonutil
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"reflect"
@@ -342,11 +343,15 @@ func handleSpecialFloats(v reflect.Value, rawData map[string]interface{}) error 
 		// Handle nested structs recursively
 		if fieldValue.Kind() == reflect.Struct {
 			if nestedMap, ok := rawValue.(map[string]interface{}); ok {
-				handleSpecialFloats(fieldValue, nestedMap)
+				if err := handleSpecialFloats(fieldValue, nestedMap); err != nil {
+					return fmt.Errorf("error when handling floats for field %s: %w", jsonFieldName, err)
+				}
 			}
 		} else if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() && fieldValue.Elem().Kind() == reflect.Struct {
 			if nestedMap, ok := rawValue.(map[string]interface{}); ok {
-				handleSpecialFloats(fieldValue.Elem(), nestedMap)
+				if err := handleSpecialFloats(fieldValue.Elem(), nestedMap); err != nil {
+					return fmt.Errorf("error when handling floats for field %s: %w", jsonFieldName, err)
+				}
 			}
 		}
 	}

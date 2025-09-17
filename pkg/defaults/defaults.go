@@ -130,7 +130,6 @@ func DefaultErrorHandler(r *request.Request) {
 	r.Error = dcerr.NewHTTPError(r.HTTPResponse.StatusCode, errorBody, requestInfo)
 	logger.Debug("DefaultErrorHandler: created HTTPError: %v", r.Error)
 	// When r.Error is set, the request processing stops and doesn't continue to other handlers
-	return
 }
 
 // SessionWithCredentials defines an interface for session-like objects with credentials

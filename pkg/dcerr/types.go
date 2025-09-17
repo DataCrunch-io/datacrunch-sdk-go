@@ -116,7 +116,6 @@ type requestError struct {
 	dcError
 	statusCode int
 	requestID  string
-	bytes      []byte
 }
 
 // newRequestError returns a wrapped error with additional information for

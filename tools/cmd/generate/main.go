@@ -202,7 +202,11 @@ func generateService(tmpl *template.Template, service ServiceConfig, outputDir s
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", servicePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		if err = file.Close(); err != nil {
+			fmt.Printf("failed to close service file: %v\n", err)
+		}
+	}()
 
 	// Execute template
 	if err := tmpl.Execute(file, service); err != nil {
