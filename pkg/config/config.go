@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"time"
 
-	credentials2 "github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
 )
 
 // Config holds configuration for the DataCrunch SDK
@@ -14,7 +14,7 @@ type Config struct {
 	Timeout *time.Duration
 
 	// Credential configuration
-	Credentials *credentials2.Credentials
+	Credentials *credentials.Credentials
 
 	// Retry configuration
 	MaxRetries *int
@@ -88,7 +88,7 @@ func WithCredentials(clientID, clientSecret string) Option {
 		if c.BaseURL != nil {
 			baseURL = *c.BaseURL
 		}
-		c.Credentials = credentials2.NewStaticCredentials(clientID, clientSecret, baseURL)
+		c.Credentials = credentials.NewStaticCredentials(clientID, clientSecret, baseURL)
 	}
 }
 
@@ -100,7 +100,7 @@ func WithTimeout(timeout time.Duration) Option {
 }
 
 // WithCredentialsProvider sets custom credentials provider
-func WithCredentialsProvider(creds *credentials2.Credentials) Option {
+func WithCredentialsProvider(creds *credentials.Credentials) Option {
 	return func(c *Config) {
 		c.Credentials = creds
 	}

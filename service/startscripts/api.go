@@ -1,6 +1,8 @@
 package startscripts
 
 import (
+	"fmt"
+
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
@@ -84,7 +86,12 @@ func (c *StartScripts) CreateStartScript(input *CreateStartScriptInput) (string,
 	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
 	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
 
-	return scriptID, req.Send()
+	err := req.Send()
+	if err != nil {
+		return "", fmt.Errorf("unable to create a start script: %v", err)
+	}
+
+	return scriptID, nil
 }
 
 // DeleteStartScripts deletes multiple startup scripts
