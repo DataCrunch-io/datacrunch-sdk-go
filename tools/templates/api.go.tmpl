@@ -1,0 +1,99 @@
+package {{.PackageName}}
+
+import (
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
+)
+
+// Example input and response types - these should be customized per service
+// TODO: Replace with actual service-specific types
+
+// List{{.ClassName}}Input represents the input for listing {{.ServiceName}} resources
+type List{{.ClassName}}Input struct {
+	// Add service-specific input fields here
+}
+
+// {{.ClassName}}Response represents a {{.ServiceName}} resource
+type {{.ClassName}}Response struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// Add service-specific response fields here
+}
+
+// Create{{.ClassName}}Input represents the input for creating a new {{.ServiceName}} resource
+type Create{{.ClassName}}Input struct {
+	Name string `json:"name"`
+	// Add service-specific input fields here
+}
+
+// Delete{{.ClassName}}Input represents the input for deleting a {{.ServiceName}} resource
+type Delete{{.ClassName}}Input struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
+// Get{{.ClassName}}Input represents the input for getting a {{.ServiceName}} resource by ID
+type Get{{.ClassName}}Input struct {
+	ID string `location:"uri" locationName:"id"`
+}
+
+// List{{.ClassName}} lists all {{.ServiceName}} resources
+func (c *{{.ClassName}}) List{{.ClassName}}() ([]*{{.ClassName}}Response, error) {
+	op := &request.Operation{
+		Name:       "List{{.ClassName}}",
+		HTTPMethod: "GET",
+		HTTPPath:   "/{{.PackageName}}",
+	}
+
+	var resources []*{{.ClassName}}Response
+	req := c.newRequest(op, nil, &resources)
+
+	return resources, req.Send()
+}
+
+// Get{{.ClassName}} gets a single {{.ServiceName}} resource by ID
+func (c *{{.ClassName}}) Get{{.ClassName}}(id string) (*{{.ClassName}}Response, error) {
+	op := &request.Operation{
+		Name:       "Get{{.ClassName}}",
+		HTTPMethod: "GET",
+		HTTPPath:   "/{{.PackageName}}/{id}",
+	}
+
+	var resource *{{.ClassName}}Response
+	req := c.newRequest(op, &Get{{.ClassName}}Input{ID: id}, &resource)
+
+	return resource, req.Send()
+}
+
+// Create{{.ClassName}} creates a new {{.ServiceName}} resource
+func (c *{{.ClassName}}) Create{{.ClassName}}(input *Create{{.ClassName}}Input) (string, error) {
+	op := &request.Operation{
+		Name:       "Create{{.ClassName}}",
+		HTTPMethod: "POST",
+		HTTPPath:   "/{{.PackageName}}",
+	}
+
+	var resourceID string
+	req := c.newRequest(op, input, &resourceID)
+
+	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
+	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
+
+	return resourceID, req.Send()
+}
+
+// Delete{{.ClassName}} deletes a {{.ServiceName}} resource by ID
+func (c *{{.ClassName}}) Delete{{.ClassName}}(id string) error {
+	op := &request.Operation{
+		Name:       "Delete{{.ClassName}}",
+		HTTPMethod: "DELETE",
+		HTTPPath:   "/{{.PackageName}}/{id}",
+	}
+
+	input := &Delete{{.ClassName}}Input{
+		ID: id,
+	}
+
+	req := c.newRequest(op, input, nil)
+
+	return req.Send()
+}
