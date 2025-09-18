@@ -9,30 +9,33 @@ The service generator creates consistent service client implementations followin
 ### Usage
 
 ```bash
-# Generate all services
-go run tools/cmd/generate/main.go
+# Generate a new service (required: service name)
+go run tools/cmd/svc_codegen/main.go -service myservice
 
-# Generate specific service only
-go run tools/cmd/generate/main.go -service instance
+# Generate with custom class and display names
+go run tools/cmd/svc_codegen/main.go -service myservice -class MyService -name "My Service"
+
+# Generate specific file types only
+go run tools/cmd/svc_codegen/main.go -service myservice -api -interface
 
 # Dry run (see what would be generated)
-go run tools/cmd/generate/main.go -dry-run
+go run tools/cmd/svc_codegen/main.go -service myservice -dry-run
 
 # Custom output directory
-go run tools/cmd/generate/main.go -output custom/path
+go run tools/cmd/svc_codegen/main.go -service myservice -output custom/path
 ```
 
-### Using Makefile
+### Using Makefile (Recommended)
 
 ```bash
-# Generate all services
-make generate-services
+# Generate a new service (required: SERVICE parameter)
+make generate-service SERVICE=myservice
 
-# Generate specific service
-make generate-service SERVICE=instance
+# Generate with custom class and display names
+make generate-service SERVICE=myservice CLASS=MyService NAME="My Service"
 
-# Dry run
-make generate-services-dry-run
+# Dry run mode
+make generate-service SERVICE=myservice DRY_RUN=true
 ```
 
 ### Using go generate
@@ -46,37 +49,40 @@ go generate ./...
 
 ```
 tools/
-├── README.md                 # This file
+├── README.md                      # This file
 ├── cmd/
-│   └── generate/
-│       └── main.go          # Service generator command
+│   └── svc_codegen/
+│       └── main.go               # Service generator command
 └── templates/
-    └── service.go.tmpl      # Service template file
+    ├── service.go.tmpl           # Service client template
+    ├── api.go.tmpl               # API methods template
+    ├── interface.go.tmpl         # Interface definition template
+    └── integration_test.go.tmpl  # Integration test template
 ```
 
 ## 🎯 What Gets Generated
 
-Each service gets:
+Each service gets a complete set of files:
 
-- **Clean service structure** with embedded `*client.Client`
-- **ConfigProvider interface** for session integration  
+- **service.go** - Clean service structure with embedded `*client.Client`
+- **api.go** - API method definitions with request/response types
+- **iface/[service].go** - Interface definitions for the service
+- **integration_test.go** - Integration test templates
+
+Features included:
+- **ConfigProvider interface** for session integration
 - **Proper client creation** with `New()` and `newClient()` separation
 - **Custom initialization hooks** (`initClient`, `initRequest`)
 - **Full integration** with credential chain and retry systems
 - **Consistent API patterns** across all services
 
-## 🔄 Available Services
+## 🔄 Service Generation
 
-| Package | Class | Description |
-|---------|-------|-------------|
-| `instance` | `Instance` | Instance management |
-| `instanceavailability` | `InstanceAvailability` | Instance availability |
-| `instancetypes` | `InstanceTypes` | Instance type definitions |
-| `locations` | `Locations` | Data center locations |
-| `sshkeys` | `SSHKeys` | SSH key management |
-| `startscripts` | `StartScripts` | Instance startup scripts |
-| `volumes` | `Volumes` | Volume management |
-| `volumetypes` | `VolumeTypes` | Volume type definitions |
+The generator creates services dynamically based on the parameters you provide. You can generate any service by specifying:
+
+- **Service Name** (required): The package name (e.g., `myservice`)
+- **Class Name** (optional): The Go struct name (defaults to capitalized service name)
+- **Display Name** (optional): Human-readable name for documentation (defaults to class name)
 
 ## 🏗️ Template System
 
@@ -88,24 +94,23 @@ The generator uses Go's `text/template` with embedded files:
 
 ## 🔧 Extending the Generator
 
-### Adding a New Service
+### Generating a New Service
 
-1. Add to `services` slice in `tools/cmd/generate/main.go`:
-   ```go
-   {"newservice", "NewService", "New Service"},
-   ```
+Simply run the generator with your desired service name:
 
-2. Run the generator:
+```bash
+make generate-service SERVICE=myservice
+```
+
+The generator will automatically create all necessary files with proper naming conventions.
+
+### Modifying Templates
+
+1. Edit templates in `tools/templates/` directory
+2. Regenerate your service to test changes:
+
    ```bash
-   go run tools/cmd/generate/main.go -service newservice
-   ```
-
-### Modifying the Template  
-
-1. Edit `tools/templates/service.go.tmpl`
-2. Regenerate services:
-   ```bash
-   make generate-services
+   make generate-service SERVICE=myservice DRY_RUN=true
    ```
 
 ### Custom Templates

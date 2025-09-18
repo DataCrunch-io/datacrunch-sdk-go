@@ -1,0 +1,181 @@
+package {{.PackageName}}_test
+
+import (
+	"testing"
+	"time"
+
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/session"
+	"github.com/datacrunch-io/datacrunch-sdk-go/service/{{.PackageName}}"
+)
+
+func setupIntegrationTest(t *testing.T) *{{.PackageName}}.{{.ClassName}} {
+	t.Helper()
+
+	sess := session.New(
+		session.WithCredentialsProvider(credentials.NewSharedCredentials("", "testing")),
+		session.WithTimeout(30*time.Second),
+		session.WithDebug(false),
+	)
+
+	return {{.PackageName}}.New(sess)
+}
+
+func TestCreate{{.ClassName}}_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	svc := setupIntegrationTest(t)
+
+	resourceID, err := svc.Create{{.ClassName}}(&{{.PackageName}}.Create{{.ClassName}}Input{
+		Name: "integration-test-{{.PackageName}}",
+		// Add other required fields here
+	})
+	if err != nil {
+		t.Fatalf("failed to create {{.PackageName}}: %v", err)
+	}
+
+	t.Logf("Created {{.PackageName}} with ID: %s", resourceID)
+
+	// cleanup
+	defer func() {
+		t.Log("Cleaning up test {{.PackageName}}...")
+		err := svc.Delete{{.ClassName}}(resourceID)
+		if err != nil {
+			t.Errorf("failed to delete test {{.PackageName}} %s: %v", resourceID, err)
+		} else {
+			t.Log("Successfully cleaned up test {{.PackageName}}")
+		}
+	}()
+}
+
+func TestList{{.ClassName}}_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	svc := setupIntegrationTest(t)
+
+	// create a {{.PackageName}}
+	resourceID, err := svc.Create{{.ClassName}}(&{{.PackageName}}.Create{{.ClassName}}Input{
+		Name: "integration-test-{{.PackageName}}",
+		// Add other required fields here
+	})
+	if err != nil {
+		t.Fatalf("failed to create {{.PackageName}}: %v", err)
+	}
+
+	resources, err := svc.List{{.ClassName}}()
+	if err != nil {
+		t.Fatalf("failed to list {{.PackageName}}: %v", err)
+	}
+
+	// look for resourceID in the list
+	var found bool
+	for _, resource := range resources {
+		if resource.ID == resourceID {
+			t.Logf("Found {{.PackageName}} with ID: %s", resourceID)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Fatalf("{{.PackageName}} with ID %s not found", resourceID)
+	}
+
+	t.Logf("Found {{.PackageName}} with ID: %s", resourceID)
+
+	// cleanup
+	defer func() {
+		t.Log("Cleaning up test {{.PackageName}}...")
+		err := svc.Delete{{.ClassName}}(resourceID)
+		if err != nil {
+			t.Errorf("failed to delete test {{.PackageName}} %s: %v", resourceID, err)
+		} else {
+			t.Log("Successfully cleaned up test {{.PackageName}}")
+		}
+	}()
+}
+
+func TestGet{{.ClassName}}ByID_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	svc := setupIntegrationTest(t)
+
+	resourceID, err := svc.Create{{.ClassName}}(&{{.PackageName}}.Create{{.ClassName}}Input{
+		Name: "integration-test-{{.PackageName}}",
+		// Add other required fields here
+	})
+	if err != nil {
+		t.Fatalf("failed to create {{.PackageName}}: %v", err)
+	}
+
+	resource, err := svc.Get{{.ClassName}}(resourceID)
+	if err != nil {
+		t.Fatalf("failed to get {{.PackageName}}: %v", err)
+	}
+
+	if resource.ID != resourceID {
+		t.Fatalf("{{.PackageName}} with ID %s not found", resourceID)
+	}
+
+	t.Logf("Found {{.PackageName}} with ID: %s", resourceID)
+
+	// cleanup
+	defer func() {
+		t.Log("Cleaning up test {{.PackageName}}...")
+		err := svc.Delete{{.ClassName}}(resourceID)
+		if err != nil {
+			t.Errorf("failed to delete test {{.PackageName}} %s: %v", resourceID, err)
+		} else {
+			t.Log("Successfully cleaned up test {{.PackageName}}")
+		}
+	}()
+}
+
+func TestDelete{{.ClassName}}ByID_Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	svc := setupIntegrationTest(t)
+
+	resourceID, err := svc.Create{{.ClassName}}(&{{.PackageName}}.Create{{.ClassName}}Input{
+		Name: "integration-test-{{.PackageName}}",
+		// Add other required fields here
+	})
+	if err != nil {
+		t.Fatalf("failed to create {{.PackageName}}: %v", err)
+	}
+
+	err = svc.Delete{{.ClassName}}(resourceID)
+	if err != nil {
+		t.Fatalf("failed to delete {{.PackageName}}: %v", err)
+	}
+
+	t.Logf("Deleted {{.PackageName}} with ID: %s", resourceID)
+
+	// Verify deletion by trying to get the resource - should fail with 404
+	_, err = svc.Get{{.ClassName}}(resourceID)
+	if err != nil {
+		// This is expected - check if it's a 404 HTTP error
+		if httpErr, ok := dcerr.IsHTTPError(err); ok {
+			t.Logf("Expected HTTP error after deletion: %v", httpErr)
+			// check status == 404 (Not Found)
+			if httpErr.StatusCode == 404 {
+				t.Logf("✅ Correctly got 404 Not Found for deleted {{.PackageName}}")
+			} else {
+				t.Errorf("Expected HTTP 404, got %d", httpErr.StatusCode)
+			}
+		} else {
+			t.Errorf("Expected HTTP error, got: %v", err)
+		}
+	} else {
+		t.Fatalf("Expected error when getting deleted {{.PackageName}} %s, but got success", resourceID)
+	}
+}

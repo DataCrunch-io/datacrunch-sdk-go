@@ -1,10 +1,11 @@
 package {{.PackageName}}
 
 import (
+	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
-	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
 const (
@@ -27,44 +28,27 @@ var initClient func(*client.Client)
 // Used for custom request initialization logic
 var initRequest func(*request.Request)
 
-type ConfigProvider interface {
-	ClientConfig(serviceName string, cfgs ...*interface{}) client.Config
-}
-
 // New creates a new instance of the {{.ClassName}} client with a config provider.
-// If additional configuration is needed for the client instance use the optional
-// client.Config parameter to add your extra config.
-//
-// Example:
-//
-//	mySession := session.Must(session.New())
-//
-//	// Create a {{.ClassName}} client from just a session.
-//	svc := {{.PackageName}}.New(mySession)
-//
-//	// Create a {{.ClassName}} client with additional configuration
-//	svc := {{.PackageName}}.New(mySession, &client.Config{Timeout: 60 * time.Second})
-func New(p ConfigProvider, cfgs ...*interface{}) *{{.ClassName}} {
+func New(p client.ConfigProvider, cfgs ...*config.Config) *{{.ClassName}} {
 	c := p.ClientConfig(EndpointsID, cfgs...)
-	return newClient(c)
+	return newClient(c.Config, c.Handlers)
 }
 
 // newClient creates, initializes and returns a new service client instance.
-func newClient(cfg client.Config) *{{.ClassName}} {
-	handlers := request.Handlers{}
-
-	// Add protocol handlers for REST JSON
-	handlers.Build.PushBackNamed(restjson.BuildHandler)
-	handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
-	handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
+func newClient(cfg config.Config, handlers request.Handlers) *{{.ClassName}} {
 
 	svc := &{{.ClassName}}{
-		Client: client.New(&cfg, metadata.ClientInfo{
+		Client: client.New(cfg, metadata.ClientInfo{
 			ServiceName: EndpointsID,
 			APIVersion:  APIVersion,
-			Endpoint:    cfg.BaseURL,
+			Endpoint:    *cfg.BaseURL,
 		}, handlers),
 	}
+
+	// Add protocol handlers for REST JSON
+	svc.Handlers.Build.PushBackNamed(restjson.BuildHandler)
+	svc.Handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
+	svc.Handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
 
 	// Run custom client initialization if present
 	if initClient != nil {

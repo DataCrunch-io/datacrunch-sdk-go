@@ -36,21 +36,31 @@ help: ## Display this help screen
 
 ##@ Code Generation
 
-generate-services: ## Generate all service clients from templates
-	@echo "$(BLUE)Generating all DataCrunch SDK services...$(NC)"
-	@go run tools/cmd/generate/main.go
-	@echo "$(GREEN)✅ Service generation complete!$(NC)"
-
-generate-service: ## Generate specific service (usage: make generate-service SERVICE=instance)
+generate-service: ## Generate service with all files (usage: make generate-service SERVICE=myservice [CLASS=MyService] [NAME="My Service"] [DRY_RUN=true])
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "$(RED)❌ SERVICE parameter is required$(NC)"; \
+		echo "$(YELLOW)Usage: make generate-service SERVICE=myservice$(NC)"; \
+		echo "$(YELLOW)Optional: CLASS=MyService NAME=\"My Service\" DRY_RUN=true$(NC)"; \
+		exit 1; \
+	fi
 	@echo "$(BLUE)Generating service: $(SERVICE)...$(NC)"
-	@go run tools/cmd/generate/main.go -service $(SERVICE)
-	@echo "$(GREEN)✅ Service $(SERVICE) generated!$(NC)"
+	@ARGS="-service $(SERVICE)"; \
+	if [ -n "$(CLASS)" ]; then \
+		ARGS="$$ARGS -class $(CLASS)"; \
+	fi; \
+	if [ -n "$(NAME)" ]; then \
+		ARGS="$$ARGS -name \"$(NAME)\""; \
+	fi; \
+	if [ "$(DRY_RUN)" = "true" ]; then \
+		echo "$(YELLOW)🏃 Dry run mode enabled$(NC)"; \
+		ARGS="$$ARGS -dry-run"; \
+	fi; \
+	go run tools/cmd/svc_codegen/main.go $$ARGS
+	@if [ "$(DRY_RUN)" != "true" ]; then \
+		echo "$(GREEN)✅ Service $(SERVICE) generated!$(NC)"; \
+	fi
 
-generate-services-dry-run: ## Show what services would be generated (dry run)
-	@echo "$(YELLOW)🏃 Dry run - showing what would be generated...$(NC)"
-	@go run tools/cmd/generate/main.go -dry-run
-
-generate: generate-services ## Alias for generate-services
+generate: generate-service ## Alias for generate-service
 
 ##@ Build & Test
 
@@ -78,13 +88,6 @@ integration-test: deps ## Run integration tests
 test-unit: deps ## Run unit tests only (fast, no external dependencies)
 	@echo "$(BLUE)Running unit tests...$(NC)"
 	@go test -v -tags="unit" ./...
-
-.PHONY: test-protocol
-test-protocol: deps ## Run protocol layer tests with coverage
-	@echo "$(BLUE)Testing protocol layer...$(NC)"
-	@mkdir -p $(COVERAGE_DIR)
-	@go test -v -coverprofile=$(COVERAGE_DIR)/protocol_coverage.out ./internal/protocol/...
-	@go tool cover -func=$(COVERAGE_DIR)/protocol_coverage.out | tail -1
 
 .PHONY: test-coverage
 test-coverage: deps ## Run tests with coverage
