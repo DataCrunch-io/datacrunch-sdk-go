@@ -67,7 +67,7 @@ func TestCreateAndDeleteInstance_Integration(t *testing.T) {
 	// Create instance
 	input := &instance.CreateInstanceInput{
 		InstanceType:    "1A100.22V",
-		Image:           "ubuntu-22.04-cuda-12.3",
+		Image:           "ubuntu-22.04",
 		SSHKeyIDs:       []string{sshKeyID}, // Empty for test - will use account default
 		LocationCode:    "FIN-01",
 		StartupScriptID: scriptID,
@@ -95,6 +95,46 @@ func TestCreateAndDeleteInstance_Integration(t *testing.T) {
 
 	// Cleanup: Delete the instance
 	defer func() {
+		t.Logf("Waiting for instance %s to be ready for deletion...", instanceID)
+		for i := 0; i < 30; i++ {
+			instances, err := instanceClient.ListInstances(nil)
+			if err != nil {
+				t.Fatalf("failed to list instances: %v", err)
+			}
+
+			var foundInstance *instance.ListInstancesResponse
+			found := false
+			for _, inst := range instances {
+				if inst.ID == instanceID {
+					found = true
+					foundInstance = inst
+					break
+				}
+			}
+
+			if !found {
+				t.Logf("Instance %s not found in list, assuming deleted", instanceID)
+				return
+			}
+
+			t.Logf("Instance %s status: %s", instanceID, foundInstance.Status)
+			if foundInstance.Status == string(instance.InstanceStatusRunning) {
+				t.Logf("Instance %s is still running, stopping it...", instanceID)
+				err = instanceClient.PerformInstanceAction(&instance.InstanceActionInput{
+					Action: instance.InstanceActionForceShutdown,
+					ID:     instanceID,
+				})
+				if err != nil {
+					t.Fatalf("failed to stop instance %s: %v", instanceID, err)
+				}
+			}
+			if foundInstance.Status == string(instance.InstanceStatusOffline) {
+				t.Logf("Instance %s can now be deleted", instanceID)
+				break
+			}
+			time.Sleep(10 * time.Second)
+		}
+
 		t.Log("Cleaning up test instance...")
 		err := instanceClient.PerformInstanceAction(&instance.InstanceActionInput{
 			Action: instance.InstanceActionDelete,

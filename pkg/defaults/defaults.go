@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
-	credentials2 "github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
@@ -35,29 +35,29 @@ func Handlers() request.Handlers {
 }
 
 // CredChain returns the default credential chain for DataCrunch
-func CredChain() *credentials2.Credentials {
-	return credentials2.NewChainCredentials(CredProviders())
+func CredChain() *credentials.Credentials {
+	return credentials.NewChainCredentials(CredProviders())
 }
 
 // CredProviders returns the default credential providers in order of precedence
-func CredProviders() []credentials2.Provider {
-	return []credentials2.Provider{
-		&credentials2.EnvProvider{},
-		&credentials2.SharedCredentialsProvider{Filename: "", Profile: ""},
+func CredProviders() []credentials.Provider {
+	return []credentials.Provider{
+		&credentials.EnvProvider{},
+		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
 	}
 }
 
 // ValidateCredentialsHandler validates that credentials are available
 func ValidateCredentialsHandler(r *request.Request) {
 	if r.Config.Credentials == nil {
-		r.Error = credentials2.ErrNoValidProvidersFoundInChain
+		r.Error = credentials.ErrNoValidProvidersFoundInChain
 	}
 }
 
 // OAuth2AuthHandler adds OAuth2 authentication to requests using credential chain
 func OAuth2AuthHandler(r *request.Request) {
 	// Get credentials from the request's session
-	var creds *credentials2.Credentials
+	var creds *credentials.Credentials
 	var err error
 
 	// Try to extract credentials from different sources
@@ -69,7 +69,7 @@ func OAuth2AuthHandler(r *request.Request) {
 	}
 
 	// Create OAuth2Credentials wrapper for token management
-	oauth2Creds := credentials2.NewOAuth2CredentialsFromProvider(creds)
+	oauth2Creds := credentials.NewOAuth2CredentialsFromProvider(creds)
 
 	// Get a valid access token
 	token, err := oauth2Creds.GetToken(r.Context())

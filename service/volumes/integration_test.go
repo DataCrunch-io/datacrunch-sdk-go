@@ -54,19 +54,15 @@ func TestCreateVolume_Integration(t *testing.T) {
 
 	svc := setupIntegrationTest(t)
 
-	// need to create an instance first
-
 	volume, err := svc.CreateVolume(&volumes.CreateVolumeInput{
 		Type:         "NVMe",
 		LocationCode: "FIN-01",
 		Size:         50,
-		InstanceID:   "9ccf35fe-5f48-4d0d-927b-ed1014205cf3",
-		InstanceIDs: []string{
-			"da541b4f-6781-437c-a73c-5a4e115a3850",
-			"5fba98e9-b680-4ca4-9e2b-6ee5bb5691f5",
-		},
-		Name: "my-volume",
+		Name:         "my-volume",
 	})
+
+	// Volume creation also supports instant attachment to an instance
+	// This should be tested in the instance integration tests
 
 	if err != nil {
 		t.Fatalf("failed to create volume: %v", err)

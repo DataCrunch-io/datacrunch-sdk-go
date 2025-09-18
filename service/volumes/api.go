@@ -57,7 +57,6 @@ type CreateVolumeInput struct {
 	Type         string   `json:"type"`
 	LocationCode string   `json:"location_code"`
 	Size         int64    `json:"size"`
-	InstanceID   string   `json:"instance_id,omitempty"`
 	InstanceIDs  []string `json:"instance_ids,omitempty"`
 	Name         string   `json:"name"`
 }
