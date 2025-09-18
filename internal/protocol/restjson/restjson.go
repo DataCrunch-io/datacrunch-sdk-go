@@ -6,11 +6,11 @@ import (
 	"io"
 	"strings"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/json/jsonutil"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/rest"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // BuildHandler is a named request handler for building restjson protocol
@@ -69,10 +69,10 @@ func Build(r *request.Request) {
 // Unmarshal unmarshals a response body for the REST JSON protocol.
 func Unmarshal(r *request.Request) {
 	logger.Debug("restjson.Unmarshal: called for request %v", r)
-	
+
 	// Error handling is now done by DefaultErrorHandler in core defaults
 	// This function only handles successful responses
-	
+
 	if t := rest.PayloadType(r.Data); t == "structure" || t == "" {
 		logger.Debug("restjson.Unmarshal: PayloadType is structure or empty, will unmarshal JSON")
 		// Unmarshal JSON using protocol-specific JSON utilities
@@ -91,15 +91,15 @@ func Unmarshal(r *request.Request) {
 				r.Error = readErr
 				return
 			}
-			
+
 			// Log raw JSON for instance-availability endpoint
 			if strings.Contains(r.HTTPRequest.URL.Path, "instance-availability") {
 				logger.Debug("restjson.Unmarshal: Raw JSON response: %s", string(body))
 			}
-			
+
 			// Create new reader from the body bytes
 			bodyReader := bytes.NewReader(body)
-			
+
 			if err := jsonutil.UnmarshalJSON(r.Data, bodyReader); err != nil {
 				logger.Debug("restjson.Unmarshal: error unmarshaling JSON: %v", err)
 				r.Error = err

@@ -1,7 +1,7 @@
 package instancetypes
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // CPU represents CPU configuration

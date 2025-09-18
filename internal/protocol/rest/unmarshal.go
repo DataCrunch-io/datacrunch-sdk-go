@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/util"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // UnmarshalHandler is a named request handler for unmarshaling rest protocol requests

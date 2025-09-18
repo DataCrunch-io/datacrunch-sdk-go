@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/session"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/session"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/sshkeys"
 )
 

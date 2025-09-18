@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
 )
 
 const (
@@ -39,7 +39,7 @@ const (
 // Request is a simplified version focusing only on the essential functionality
 // for making HTTP requests with retry support.
 type Request struct {
-	Config   datacrunch.Config // Using interface{} to avoid import cycle
+	Config   config.Config // Using interface{} to avoid import cycle
 	Handlers Handlers
 
 	Retryer
@@ -73,7 +73,7 @@ type Operation struct {
 }
 
 // New creates a new Request pointer.
-func New(cfg datacrunch.Config, handlers Handlers, retryer Retryer, operation *Operation, params interface{}, data interface{}) *Request {
+func New(cfg config.Config, handlers Handlers, retryer Retryer, operation *Operation, params interface{}, data interface{}) *Request {
 	if retryer == nil {
 		retryer = noOpRetryer{}
 	}

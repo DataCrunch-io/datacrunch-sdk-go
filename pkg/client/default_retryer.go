@@ -2,11 +2,10 @@ package client
 
 import (
 	"math"
-	"strconv"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/util"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // DefaultRetryer implements basic retry logic using exponential backoff for
@@ -153,37 +152,4 @@ func (d DefaultRetryer) ShouldRetry(r *request.Request) bool {
 		return *r.Retryable
 	}
 	return r.IsErrorRetryable() || r.IsErrorThrottle()
-}
-
-// This will look in the Retry-After header, RFC 7231, for how long
-// it will wait before attempting another request
-func getRetryAfterDelay(r *request.Request) (time.Duration, bool) {
-	if !canUseRetryAfterHeader(r) {
-		return 0, false
-	}
-
-	delayStr := r.HTTPResponse.Header.Get("Retry-After")
-	if len(delayStr) == 0 {
-		return 0, false
-	}
-
-	delay, err := strconv.Atoi(delayStr)
-	if err != nil {
-		return 0, false
-	}
-
-	return time.Duration(delay) * time.Second, true
-}
-
-// Will look at the status code to see if the retry header pertains to
-// the status code.
-func canUseRetryAfterHeader(r *request.Request) bool {
-	switch r.HTTPResponse.StatusCode {
-	case 429:
-	case 503:
-	default:
-		return false
-	}
-
-	return true
 }

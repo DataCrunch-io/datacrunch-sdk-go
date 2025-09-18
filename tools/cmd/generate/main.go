@@ -13,9 +13,9 @@ import (
 var serviceTemplate = `package {{.PackageName}}
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
 )
 
@@ -202,7 +202,11 @@ func generateService(tmpl *template.Template, service ServiceConfig, outputDir s
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", servicePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		if err = file.Close(); err != nil {
+			fmt.Printf("failed to close service file: %v\n", err)
+		}
+	}()
 
 	// Execute template
 	if err := tmpl.Execute(file, service); err != nil {
