@@ -1,0 +1,19 @@
+package interfaces
+
+import (
+	"github.com/datacrunch-io/datacrunch-sdk-go/service/{{.PackageName}}"
+)
+
+// {{.ClassName}}API provides the interface for the {{.ServiceName}} service
+type {{.ClassName}}API interface {
+	// List{{.ClassName}} lists all {{.ServiceName}} resources
+	List{{.ClassName}}() ([]*{{.PackageName}}.{{.ClassName}}Response, error)
+	// Get{{.ClassName}} gets a single {{.ServiceName}} resource by ID
+	Get{{.ClassName}}(id string) (*{{.PackageName}}.{{.ClassName}}Response, error)
+	// Create{{.ClassName}} creates a new {{.ServiceName}} resource
+	Create{{.ClassName}}(input *{{.PackageName}}.Create{{.ClassName}}Input) (string, error)
+	// Delete{{.ClassName}} deletes a {{.ServiceName}} resource by ID
+	Delete{{.ClassName}}(id string) error
+}
+
+var _ {{.ClassName}}API = (*{{.PackageName}}.{{.ClassName}})(nil)
