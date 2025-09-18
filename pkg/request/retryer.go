@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
 )
 
 // Retryer provides the interface drive the SDK's request retry behavior. The

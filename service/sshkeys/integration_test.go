@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/session"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/session"
 	"github.com/datacrunch-io/datacrunch-sdk-go/service/sshkeys"
 )
 

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 func TestUnmarshalResponse_HeaderMapping(t *testing.T) {
@@ -74,8 +74,8 @@ func TestUnmarshalResponse_HeaderMapping(t *testing.T) {
 			}{},
 			response: &http.Response{
 				Header: http.Header{
-					"X-Meta-Key1": []string{"value1"},
-					"X-Meta-Key2": []string{"value2"},
+					"X-Meta-Key1":  []string{"value1"},
+					"X-Meta-Key2":  []string{"value2"},
 					"Other-Header": []string{"ignore"},
 				},
 			},
@@ -94,7 +94,7 @@ func TestUnmarshalResponse_HeaderMapping(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := UnmarshalResponse(tt.response, tt.target, false)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got none")
@@ -108,16 +108,16 @@ func TestUnmarshalResponse_HeaderMapping(t *testing.T) {
 			}
 
 			// Compare the results using reflection
-			// This is a simplified comparison - you might want more robust comparison  
+			// This is a simplified comparison - you might want more robust comparison
 			targetVal := reflect.ValueOf(tt.target).Elem()
 			expectedVal := reflect.ValueOf(tt.expected).Elem()
-			
+
 			// Compare field by field for structs to handle pointer fields correctly
 			if targetVal.Kind() == reflect.Struct && expectedVal.Kind() == reflect.Struct {
 				for i := 0; i < targetVal.NumField(); i++ {
 					targetField := targetVal.Field(i)
 					expectedField := expectedVal.Field(i)
-					
+
 					if targetField.Kind() == reflect.Ptr && expectedField.Kind() == reflect.Ptr {
 						// Both are pointers, compare the values they point to
 						if targetField.IsNil() && expectedField.IsNil() {
@@ -257,7 +257,7 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// tt.target is a pointer to pointer, we need to get the inner pointer 
+			// tt.target is a pointer to pointer, we need to get the inner pointer
 			v := reflect.ValueOf(tt.target).Elem() // This gives us the *string
 			err := unmarshalHeader(v, tt.header, tt.tag)
 
@@ -275,9 +275,9 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 
 			// Compare results - both target and expected are pointers to pointers
 			// tt.target is **T, tt.expected is **T
-			targetPtr := reflect.ValueOf(tt.target).Elem()  // *T
-			expectedPtr := reflect.ValueOf(tt.expected).Elem()  // *T
-			
+			targetPtr := reflect.ValueOf(tt.target).Elem()     // *T
+			expectedPtr := reflect.ValueOf(tt.expected).Elem() // *T
+
 			// Both should be pointers, check if they're nil first
 			if targetPtr.Kind() == reflect.Ptr && expectedPtr.Kind() == reflect.Ptr {
 				if targetPtr.IsNil() && expectedPtr.IsNil() {
@@ -287,10 +287,10 @@ func TestUnmarshalHeader_TypeConversions(t *testing.T) {
 					t.Errorf("nil mismatch: expected nil=%v, got nil=%v", expectedPtr.IsNil(), targetPtr.IsNil())
 					return
 				}
-				
+
 				// Dereference both pointers to get the actual values
-				targetVal := targetPtr.Elem().Interface()  // T
-				expectedVal := expectedPtr.Elem().Interface()  // T
+				targetVal := targetPtr.Elem().Interface()     // T
+				expectedVal := expectedPtr.Elem().Interface() // T
 				if !reflect.DeepEqual(targetVal, expectedVal) {
 					t.Errorf("expected %+v, got %+v", expectedVal, targetVal)
 				}

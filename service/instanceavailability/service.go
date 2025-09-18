@@ -1,11 +1,11 @@
 package instanceavailability
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 const (
@@ -28,14 +28,14 @@ var initClient func(*client.Client)
 var initRequest func(*request.Request)
 
 // New creates a new instance of the InstanceAvailability client with a config provider.
-func New(p client.ConfigProvider, cfgs ...*datacrunch.Config) *InstanceAvailability {
+func New(p client.ConfigProvider, cfgs ...*config.Config) *InstanceAvailability {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 
 	return newClient(c.Config, c.Handlers)
 }
 
 // newClientWithHandlers creates, initializes and returns a new service client instance with session handlers.
-func newClient(cfg datacrunch.Config, handlers request.Handlers) *InstanceAvailability {
+func newClient(cfg config.Config, handlers request.Handlers) *InstanceAvailability {
 	svc := &InstanceAvailability{
 		Client: client.New(cfg, metadata.ClientInfo{
 			ServiceName: EndpointsID,

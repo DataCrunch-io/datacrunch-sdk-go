@@ -86,7 +86,11 @@ func (s *SharedCredentialsProvider) loadCredentials(filename, profile string) (V
 	if err != nil {
 		return Value{}, fmt.Errorf("failed to open credentials file %s: %w", filename, err)
 	}
-	defer file.Close()
+	defer func() {
+		if err = file.Close(); err != nil {
+			fmt.Printf("failed to close credentials file: %v\n", err)
+		}
+	}()
 
 	var (
 		creds           Value

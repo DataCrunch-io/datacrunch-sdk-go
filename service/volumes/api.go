@@ -1,8 +1,8 @@
 package volumes
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 // Instance represents an instance attached to a volume

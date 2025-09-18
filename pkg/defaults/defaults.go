@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
+	credentials2 "github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 func Handlers() request.Handlers {
@@ -35,29 +35,29 @@ func Handlers() request.Handlers {
 }
 
 // CredChain returns the default credential chain for DataCrunch
-func CredChain() *credentials.Credentials {
-	return credentials.NewChainCredentials(CredProviders())
+func CredChain() *credentials2.Credentials {
+	return credentials2.NewChainCredentials(CredProviders())
 }
 
 // CredProviders returns the default credential providers in order of precedence
-func CredProviders() []credentials.Provider {
-	return []credentials.Provider{
-		&credentials.EnvProvider{},
-		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
+func CredProviders() []credentials2.Provider {
+	return []credentials2.Provider{
+		&credentials2.EnvProvider{},
+		&credentials2.SharedCredentialsProvider{Filename: "", Profile: ""},
 	}
 }
 
 // ValidateCredentialsHandler validates that credentials are available
 func ValidateCredentialsHandler(r *request.Request) {
 	if r.Config.Credentials == nil {
-		r.Error = credentials.ErrNoValidProvidersFoundInChain
+		r.Error = credentials2.ErrNoValidProvidersFoundInChain
 	}
 }
 
 // OAuth2AuthHandler adds OAuth2 authentication to requests using credential chain
 func OAuth2AuthHandler(r *request.Request) {
 	// Get credentials from the request's session
-	var creds *credentials.Credentials
+	var creds *credentials2.Credentials
 	var err error
 
 	// Try to extract credentials from different sources
@@ -69,7 +69,7 @@ func OAuth2AuthHandler(r *request.Request) {
 	}
 
 	// Create OAuth2Credentials wrapper for token management
-	oauth2Creds := credentials.NewOAuth2CredentialsFromProvider(creds)
+	oauth2Creds := credentials2.NewOAuth2CredentialsFromProvider(creds)
 
 	// Get a valid access token
 	token, err := oauth2Creds.GetToken(r.Context())
@@ -130,7 +130,6 @@ func DefaultErrorHandler(r *request.Request) {
 	r.Error = dcerr.NewHTTPError(r.HTTPResponse.StatusCode, errorBody, requestInfo)
 	logger.Debug("DefaultErrorHandler: created HTTPError: %v", r.Error)
 	// When r.Error is set, the request processing stops and doesn't continue to other handlers
-	return
 }
 
 // SessionWithCredentials defines an interface for session-like objects with credentials

@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/dcerr"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/logger"
 	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/dcerr"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 const (
@@ -30,8 +30,6 @@ const (
 var noEscape [256]bool
 
 var errValueNotSet = fmt.Errorf("value not set")
-
-var byteSliceType = reflect.TypeOf([]byte{})
 
 func init() {
 	for i := 0; i < len(noEscape); i++ {
@@ -164,6 +162,12 @@ func buildBody(r *request.Request, v reflect.Value) {
 		return
 	}
 	
+	// Check if there's a payload member to use instead of the full params
+	if payloadMember := PayloadMember(params); payloadMember != nil {
+		logger.Debug("buildBody: using payload member instead of full params")
+		params = payloadMember
+	}
+
 	// Check if there's a payload member to use instead of the full params
 	if payloadMember := PayloadMember(params); payloadMember != nil {
 		logger.Debug("buildBody: using payload member instead of full params")

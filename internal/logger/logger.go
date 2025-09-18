@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"strings"
@@ -125,5 +126,5 @@ func SanitizeBody(body []byte, maxLen int) string {
 
 // IsDebugEnabled checks if debug logging is enabled
 func IsDebugEnabled() bool {
-	return getGlobalLogger().Enabled(nil, slog.LevelDebug)
+	return getGlobalLogger().Enabled(context.TODO(), slog.LevelDebug)
 }

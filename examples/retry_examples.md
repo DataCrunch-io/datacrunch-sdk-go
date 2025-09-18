@@ -49,7 +49,7 @@ client := datacrunch.NewWithSession(sess)
 ### Custom Retryer
 
 ```go
-import "github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
+import "github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
 
 // Create custom retryer with specific timing
 customRetryer := client.NewDefaultRetryer(5) // 5 retries with defaults

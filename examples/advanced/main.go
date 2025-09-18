@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/client/metadata"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/credentials"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/defaults"
-	"github.com/datacrunch-io/datacrunch-sdk-go/datacrunch/request"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/credentials"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/defaults"
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
 )
 
 func main() {
@@ -60,10 +60,10 @@ func main() {
 	*/
 
 	baseURL := "https://api-staging.datacrunch.io/v1"
-	cfg := datacrunch.NewConfig(
-		datacrunch.WithBaseURL(baseURL),
-		datacrunch.WithDebug(true),
-		datacrunch.WithCredentialsProvider(credentials.NewSharedCredentials("", "staging")), // use default credentials file location
+	cfg := config.NewConfig(
+		config.WithBaseURL(baseURL),
+		config.WithDebug(true),
+		config.WithCredentialsProvider(credentials.NewSharedCredentials("", "staging")), // use default credentials file location
 	)
 
 	clientInfo := metadata.ClientInfo{
