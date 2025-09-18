@@ -16,6 +16,7 @@ go get github.com/datacrunch-io/datacrunch-sdk-go
 ### 1. Set your credentials
 
 ```bash
+export DATACRUNCH_BASE_URL="https://api.datacrunch.io/v1" # Optional for production client
 export DATACRUNCH_CLIENT_ID="your-client-id"
 export DATACRUNCH_CLIENT_SECRET="your-client-secret"
 ```
@@ -32,12 +33,28 @@ The SDK uses an **AWS-style credential chain** with flexible configuration:
 
 1. **Environment variables** (highest priority)
    - `DATACRUNCH_CLIENT_ID` + `DATACRUNCH_CLIENT_SECRET`
-   - `DATACRUNCH_BASE_URL` (optional)
+   - `DATACRUNCH_BASE_URL` (optional for production client)
+      - production(default): `https://api.datacrunch.io/v1`
+      - staging: `https://api-staging.datacrunch.io/v1`
+      - testing: `https://api-testing.datacrunch.io/v1`
+
 
 2. **Shared credentials file**
    - Location: `~/.datacrunch/credentials`
    - Multiple profiles (default, staging, production, etc.)
    - INI format with profile sections
+
+   ```ini
+   [default]
+   client_id = your-default-client-id
+   client_secret = your-default-client-secret
+   base_url = https://api.datacrunch.io/v1
+
+   [staging]
+   client_id = your-staging-client-id
+   client_secret = your-staging-client-secret
+   base_url = https://api-staging.datacrunch.io/v1
+   ```
 
 3. **Static credentials**
    - Programmatically configured
@@ -69,6 +86,7 @@ Comprehensive examples are available in the [`examples/`](examples/) directory:
 
 ```bash
 # Set credentials
+export DATACRUNCH_BASE_URL="https://api.datacrunch.io/v1" # Optional for production client
 export DATACRUNCH_CLIENT_ID="your-client-id"
 export DATACRUNCH_CLIENT_SECRET="your-client-secret"
 
