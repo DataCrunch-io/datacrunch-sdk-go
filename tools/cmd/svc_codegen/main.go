@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 // Template file definitions
@@ -45,14 +47,13 @@ func (sc ServiceConfig) Validate() error {
 	}
 
 	// Package name should be lowercase and contain only letters and numbers
-	for _, r := range sc.PackageName {
-		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')) {
-			return fmt.Errorf("PackageName '%s' should contain only lowercase letters and numbers", sc.PackageName)
-		}
+	var alphanumeric = regexp.MustCompile("^[a-z0-9]*$")
+	if !alphanumeric.MatchString(sc.PackageName) {
+		return fmt.Errorf("PackageName '%s' should contain only lowercase letters and numbers", sc.PackageName)
 	}
 
 	// Class name should start with uppercase letter
-	if len(sc.ClassName) == 0 || (sc.ClassName[0] < 'A' || sc.ClassName[0] > 'Z') {
+	if len(sc.ClassName) == 0 || unicode.IsLower(rune(sc.ClassName[0])) {
 		return fmt.Errorf("ClassName '%s' should start with an uppercase letter", sc.ClassName)
 	}
 
