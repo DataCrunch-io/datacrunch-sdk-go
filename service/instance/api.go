@@ -1,8 +1,8 @@
 package instance
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
-	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/request"
+	"fmt"
+	"net/http"
 )
 
 const (
@@ -142,37 +142,30 @@ type ListInstancesInput struct {
 
 // ListInstances lists all instances
 func (c *Instance) ListInstances(input *ListInstancesInput) ([]*ListInstancesResponse, error) {
-	op := &request.Operation{
-		Name:       "ListInstances",
-		HTTPMethod: "GET",
-		HTTPPath:   "/instances",
+	instancesPath := "/instances"
+	if input != nil && input.Status != "" {
+		instancesPath += "?status=" + input.Status
 	}
 
-	var instances []*ListInstancesResponse
-	req := c.newRequest(op, input, &instances)
+	var instances []ListInstancesResponse
+	if err := c.tempAPIClient.Request(http.MethodGet, instancesPath, nil, http.StatusOK, &instances); err != nil {
+		return nil, fmt.Errorf("error listing instances: %w", err)
+	}
 
-	return instances, req.Send()
+	// Convert to pointer slice, since current service expects that
+	instancePtrs := make([]*ListInstancesResponse, len(instances))
+	for i := range instances {
+		instancePtrs[i] = &instances[i]
+	}
+
+	return instancePtrs, nil
 }
 
 // CreateInstance creates a new compute instance
 func (c *Instance) CreateInstance(input *CreateInstanceInput) (string, error) {
-	op := &request.Operation{
-		Name:       "CreateInstance",
-		HTTPMethod: "POST",
-		HTTPPath:   "/instances",
-	}
-
 	var instanceID string
-	req := c.newRequest(op, input, &instanceID)
-
-	// Replace the JSON unmarshaler with string unmarshaler for the instance ID response
-	// The default error handler will still run first
-	req.Handlers.Unmarshal.RemoveByName("datacrunchsdk.restjson.Unmarshal")
-	req.Handlers.Unmarshal.PushBackNamed(restjson.StringUnmarshalHandler)
-
-	err := req.Send()
-	if err != nil {
-		return "", err
+	if err := c.tempAPIClient.Request(http.MethodPost, "/instances", input, http.StatusAccepted, &instanceID); err != nil {
+		return "", fmt.Errorf("error creating instance: %w", err)
 	}
 
 	return instanceID, nil
@@ -180,13 +173,5 @@ func (c *Instance) CreateInstance(input *CreateInstanceInput) (string, error) {
 
 // PerformInstanceAction performs an action on an instance
 func (c *Instance) PerformInstanceAction(input *InstanceActionInput) error {
-	op := &request.Operation{
-		Name:       "PerformInstanceAction",
-		HTTPMethod: "PUT",
-		HTTPPath:   "/instances",
-	}
-
-	req := c.newRequest(op, input, nil)
-
-	return req.Send()
+	return c.tempAPIClient.Request(http.MethodPut, "/instances", input, http.StatusAccepted, nil)
 }
