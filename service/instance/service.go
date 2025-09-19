@@ -1,7 +1,9 @@
 package instance
 
 import (
-	"github.com/datacrunch-io/datacrunch-sdk-go/internal/protocol/restjson"
+	"fmt"
+
+	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/api"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/client/metadata"
 	"github.com/datacrunch-io/datacrunch-sdk-go/pkg/config"
@@ -17,6 +19,9 @@ const (
 // DataCrunch Instance API
 type Instance struct {
 	*client.Client
+
+	// Temporary API client for internal use
+	tempAPIClient api.Client
 }
 
 // Client is an alias for Instance to match the expected interface
@@ -25,14 +30,23 @@ type Client = *Instance
 // Used for custom client initialization logic
 var initClient func(*client.Client)
 
-// Used for custom request initialization logic
-var initRequest func(*request.Request)
-
 // New creates a new instance of the Instance client with a config provider.
 func New(p client.ConfigProvider, cfgs ...*config.Config) *Instance {
 	c := p.ClientConfig(EndpointsID, cfgs...)
 
 	return newClient(c.Config, c.Handlers)
+}
+
+func (c *Instance) tempGetNewAPIClient() (api.Client, error) {
+	clientID, clientSecret, err := c.Config.Credentials.GetClientCredentials()
+	if err != nil {
+		return api.Client{}, fmt.Errorf("error getting client credentials: %w", err)
+	}
+
+	newClient := api.NewWithCredentials(clientID, clientSecret)
+	newClient.SetBaseURL(*c.Config.BaseURL)
+
+	return newClient, nil
 }
 
 // newClient creates, initializes and returns a new service client instance.
@@ -46,10 +60,16 @@ func newClient(cfg config.Config, handlers request.Handlers) *Instance {
 		}, handlers),
 	}
 
+	otherAPIClient, err := svc.tempGetNewAPIClient()
+	if err != nil {
+		panic(fmt.Sprintf("failed to create temporary API client: %v", err))
+	}
+	svc.tempAPIClient = otherAPIClient
+
 	// Add protocol handlers for REST JSON
-	svc.Handlers.Build.PushBackNamed(restjson.BuildHandler)
-	svc.Handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
-	svc.Handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
+	//svc.Handlers.Build.PushBackNamed(restjson.BuildHandler)
+	//svc.Handlers.Unmarshal.PushBackNamed(restjson.UnmarshalHandler)
+	//svc.Handlers.Complete.PushBackNamed(restjson.UnmarshalMetaHandler)
 
 	// Run custom client initialization if present
 	if initClient != nil {
@@ -57,15 +77,4 @@ func newClient(cfg config.Config, handlers request.Handlers) *Instance {
 	}
 
 	return svc
-}
-
-func (c *Instance) newRequest(op *request.Operation, params, data interface{}) *request.Request {
-	req := c.NewRequest(op, params, data)
-
-	// Run custom request initialization if present
-	if initRequest != nil {
-		initRequest(req)
-	}
-
-	return req
 }
